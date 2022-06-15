@@ -1,0 +1,41 @@
+!if $d(SHAREWARE)
+SHAREWARE_FLAG=-DSHAREWARE
+!else
+SHAREWARE_FLAG=
+!endif
+
+# This works with the standard install location for Borland C++ 3.0 or 3.1.
+# Adapt as needed for other compilers (e.g. Turbo C++).
+BCROOT=C:\BORLANDC
+INCLUDEDIR=$(BCROOT)\INCLUDE
+LIBDIR=$(BCROOT)\LIB
+CC=bcc
+TLINK=tlink
+
+# Most flags are set in TURBOC.CFG. Add additional flags here to override
+# what's set in the cfg file.
+CFLAGS=-I$(INCLUDEDIR) -L$(LIBDIR) $(SHAREWARE_FLAG)
+LDFLAGS=/C /s /d /m
+
+OBJS=C0.OBJ BASICSND.OBJ DIGISND.OBJ UNIT1.OBJ UNIT2.OBJ
+TARGET=NUKEM2RE.EXE
+
+
+all: $(TARGET)
+
+clean:
+	@del *.exe
+	@del *.map
+	@del *.obj
+
+c0.obj: c0.asm gfx.asm
+	tasm /d__MEDIUM__ /i$(LIBDIR)\STARTUP /m2 c0.asm
+
+.c.obj:
+	$(CC) $(CFLAGS) -c $.
+
+digisnd.obj: digisnd\src\digisnd.c
+	$(CC) $(CFLAGS) -o$@ -c $?
+
+$(TARGET): $(OBJS)
+	$(TLINK) $(LDFLAGS) $(OBJS), $(TARGET), , $(LIBDIR)\CM.LIB
