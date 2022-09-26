@@ -299,7 +299,10 @@ void pascal LoadMapData(char far* filename)
   // Load size of the extra map data. See UpdateAndDrawGame in game2.c for more
   // information about the extra map data.
   LoadAssetFilePart(
-    filename, (dword)headerSize + (sizeof(word) + 65500), &extraDataSize, sizeof(word));
+    filename,
+    (dword)headerSize + (sizeof(word) + 65500),
+    &extraDataSize,
+    sizeof(word));
 
   compressedExtraData = MM_PushChunk(extraDataSize, CT_TEMPORARY);
 
