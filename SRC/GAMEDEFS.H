@@ -294,19 +294,6 @@ typedef struct {
   (int)(((tileIndex) & 0x8000) ? 0 :                      \
   (gfxTilesetAttributes[(tileIndex) >> 3] & (attribute)))
 
-#define READ_LVL_HEADER_WORD(offset)        \
-  ((*(levelHeaderData + offset + 1) << 8) | \
-   *(levelHeaderData + offset))
-
-// Utility macros for reading actor descriptions in the level header
-//
-// 45 is the offset of the first actor description's first word within the level
-// header. Each actor description consists of 3 words (id, x, y).
-#define READ_LVL_ACTOR_DESC_ID(index) READ_LVL_HEADER_WORD(45 + index)
-#define READ_LVL_ACTOR_DESC_X(index)  READ_LVL_HEADER_WORD(47 + index)
-#define READ_LVL_ACTOR_DESC_Y(index)  READ_LVL_HEADER_WORD(49 + index)
-
-
 #define SHAKE_SCREEN(amount) SetScreenShift(amount)
 
 #define FLASH_SCREEN(col) { gfxFlashScreen = true; gfxScreenFlashColor = col; }

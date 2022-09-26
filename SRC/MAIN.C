@@ -91,7 +91,7 @@ void InitBackdropOffsetTable(void)
   // This always happens at the end of the level loading process, so the
   // switchover to the level-specific music was also placed in here.
   StopMusic();
-  PlayMusic(levelHeaderData + 26, sndInGameMusicBuffer);
+  PlayMusic(LVL_MUSIC_FILENAME(), sndInGameMusicBuffer);
 
   for (y = 0; y < 25 * 80; y += 80)
   {
@@ -161,9 +161,6 @@ void pascal LoadLevelHeader(char far* filename)
   // levelHeaderData, which is fixed at compile time.
   LoadAssetFilePart(filename, sizeof(word), levelHeaderData, headerSize);
 
-  // The last word of the header data is the width of the map
-  mapWidth = READ_LVL_HEADER_WORD(headerSize - 2);
-
   // The header data is laid out as follows:
   //
   // | offset | what               | type                   |
@@ -180,6 +177,8 @@ void pascal LoadLevelHeader(char far* filename)
   // |  N - 2 | map width          | word                   |
   //
   // With N referring to `headerSize`.
+
+  mapWidth = READ_LVL_HEADER_WORD(headerSize - 2);
 
   // The actor descriptions themselves are handled in SpawnLevelActors() and
   // LoadSpritesForLevel().
@@ -213,7 +212,7 @@ void DrawNewHighScoreEntryBackground(void)
 void LoadTileSetAttributes(void)
 {
   gfxTilesetAttributes = MM_PushChunk(3600, CT_CZONE);
-  LoadAssetFilePart(levelHeaderData, 0, gfxTilesetAttributes, 3600);
+  LoadAssetFilePart(LVL_TILESET_FILENAME(), 0, gfxTilesetAttributes, 3600);
 }
 
 
@@ -225,7 +224,7 @@ void LoadUnmaskedTiles(void)
 {
   byte far* data = MM_PushChunk(32000, CT_TEMPORARY);
 
-  LoadAssetFilePart(levelHeaderData, 3600, data, 32000);
+  LoadAssetFilePart(LVL_TILESET_FILENAME(), 3600, data, 32000);
   UploadTileset(data, 8000, 0x4000);
 
   MM_PopChunk(CT_TEMPORARY);
@@ -239,7 +238,7 @@ void LoadUnmaskedTiles(void)
 void LoadMaskedTiles(void)
 {
   gfxMaskedTileData = MM_PushChunk(6400, CT_MASKED_TILES);
-  LoadAssetFilePart(levelHeaderData, 35600, gfxMaskedTileData, 6400);
+  LoadAssetFilePart(LVL_TILESET_FILENAME(), 35600, gfxMaskedTileData, 6400);
 }
 
 
@@ -250,7 +249,7 @@ void LoadMaskedTiles(void)
 void AllocateInGameMusicBuffer(void)
 {
   sndInGameMusicBuffer =
-    MM_PushChunk(GetAssetFileSize(levelHeaderData + 26), CT_INGAME_MUSIC);
+    MM_PushChunk(GetAssetFileSize(LVL_MUSIC_FILENAME()), CT_INGAME_MUSIC);
 }
 
 
@@ -804,7 +803,7 @@ static void pascal RestartLevel(byte level)
     StopMusic();
     MM_PopChunks(CT_TEMPORARY);
 
-    PlayMusic(levelHeaderData + 26, sndInGameMusicBuffer);
+    PlayMusic(LVL_MUSIC_FILENAME(), sndInGameMusicBuffer);
 
     // Reload the map, since it may have changed during gameplay due to
     // destructible walls, falling map parts etc.

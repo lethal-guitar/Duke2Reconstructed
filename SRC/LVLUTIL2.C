@@ -142,7 +142,8 @@ void LoadBackdrop(void)
 
   if (mapSecondaryBackdrop)
   {
-    LoadAssetFile(MakeFilename("DROP", mapSecondaryBackdrop, ".mni"), backdropData);
+    LoadAssetFile(
+      MakeFilename("DROP", mapSecondaryBackdrop, ".mni"), backdropData);
 
     // Copying a full backdrop image requires 8000 bytes per plane, but here,
     // only 6720 are copied. This is because a secondary backdrop is only
@@ -155,7 +156,7 @@ void LoadBackdrop(void)
     UploadTileset(shiftedVersion, 6720, 0xE000);
   }
 
-  LoadAssetFile(levelHeaderData + 13, backdropData);
+  LoadAssetFile(LVL_BACKDROP_FILENAME(), backdropData);
   UploadTileset(backdropData, 8000, 0x8000);
 
   if (mapBackdropAutoScrollX)

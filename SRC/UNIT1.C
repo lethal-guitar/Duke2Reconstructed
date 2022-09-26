@@ -39,6 +39,7 @@ functions that don't really fit anywhere else.
 #include "common.h"
 #include "digisnd.h"
 #include "gfx.h"
+#include "lvlhead.h"
 #include "scancode.h"
 #include "sounds.h"
 #include "vars.h"

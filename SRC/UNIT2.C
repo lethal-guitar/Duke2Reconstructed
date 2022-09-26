@@ -40,6 +40,7 @@ functions that don't really fit anywhere else.
 #include "digisnd.h"
 #include "gamedefs.h"
 #include "gfx.h"
+#include "lvlhead.h"
 #include "scancode.h"
 #include "sounds.h"
 
