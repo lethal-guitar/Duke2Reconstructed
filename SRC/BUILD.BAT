@@ -2,7 +2,8 @@
 
 REM This file assumes fixed locations for the installations of Borland C++ 3.0,
 REM Borland C++ 3.1, and Turbo C++ 3.0. Adjust as needed.
-REM Borland C++ 3.1 is optional.
+REM Borland C++ 3.1 is optional, a precompiled OBJ file will be used if it's
+REM not found at the expected location.
 
 set BCCROOT_30=C:\BORLANDC
 set BCCROOT_31=C:\BCC_31
@@ -20,7 +21,7 @@ set SHAREWARE_FLAG=-DSHAREWARE
 set CFLAGS=-I%BCCROOT_30%\INCLUDE -L%BCCROOT_30%\LIB %SHAREWARE_FLAG%
 
 
-tasm /d__MEDIUM__ /m2 /i%BCCROOT_30%\LIB\STARTUP C0.ASM
+%BCCROOT_30%\BIN\tasm /d__MEDIUM__ /m2 /i%BCCROOT_30%\LIB\STARTUP C0.ASM
 if errorlevel 1 goto err
 
 
@@ -42,7 +43,8 @@ if errorlevel 1 goto err
 if errorlevel 1 goto err
 
 %BCCROOT_30%\BIN\tlink /C /d /s /m C0.OBJ BASICSND.OBJ DIGISND\DIGISND.OBJ UNIT1.OBJ UNIT2.OBJ, NUKEM2RE.EXE, , %BCCROOT_30%\LIB\CM.LIB
-
-:err
+if errorlevel 1 goto err
 
 ..\LZEXE\LZEXE NUKEM2RE.EXE
+
+:err
