@@ -142,21 +142,21 @@ byte pascal TestShotCollision(word handle)
   // Test player shots
   for (i = 0; i < MAX_NUM_PLAYER_SHOTS; i++)
   {
-    if (gmPlayerShotStates[i].frame == 0) { continue; }
+    if (gmPlayerShotStates[i].active == 0) { continue; }
 
     shot = gmPlayerShotStates + i;
 
     if (AreSpritesTouching(
       actor->id, actor->frame, actor->x, actor->y,
-      shot->sprite, shot->frame - 1, shot->x, shot->y))
+      shot->id, shot->active - 1, shot->x, shot->y))
     {
       retPlayerShotDirection = shot->direction;
 
-      switch (shot->sprite)
+      switch (shot->id)
       {
         case ACT_REGULAR_SHOT_HORIZONTAL:
         case ACT_REGULAR_SHOT_VERTICAL:
-          shot->frame = shot->frame | 0x8000; // deactivate shot
+          shot->active = shot->active | 0x8000; // deactivate shot
           return WPN_DAMAGE_REGULAR;
 
         case ACT_DUKE_LASER_SHOT_HORIZONTAL:
@@ -167,14 +167,14 @@ byte pascal TestShotCollision(word handle)
         case ACT_DUKE_FLAME_SHOT_DOWN:
         case ACT_DUKE_FLAME_SHOT_LEFT:
         case ACT_DUKE_FLAME_SHOT_RIGHT:
-          shot->frame = shot->frame | 0x8000; // deactivate shot
+          shot->active = shot->active | 0x8000; // deactivate shot
           return WPN_DAMAGE_FLAME_THROWER;
 
         case ACT_DUKE_ROCKET_UP:
         case ACT_DUKE_ROCKET_DOWN:
         case ACT_DUKE_ROCKET_LEFT:
         case ACT_DUKE_ROCKET_RIGHT:
-          shot->frame = shot->frame | 0x8000; // deactivate shot
+          shot->active = shot->active | 0x8000; // deactivate shot
           SpawnEffect(
             ACT_EXPLOSION_FX_2, shot->x - 3, shot->y + 3, EM_NONE, 0);
           return WPN_DAMAGE_ROCKET_LAUNCHER;
@@ -233,14 +233,13 @@ bool pascal FindPlayerShotInRect(word left, word top, word right, word bottom)
 
   for (i = 0; i < MAX_NUM_PLAYER_SHOTS; i++)
   {
-    if (gmPlayerShotStates[i].frame)
+    if (gmPlayerShotStates[i].active)
     {
       shot = gmPlayerShotStates + i;
 
-      if (IsSpriteInRect(
-        shot->sprite, shot->x, shot->y, left, top, right, bottom))
+      if (IsSpriteInRect(shot->id, shot->x, shot->y, left, top, right, bottom))
       {
-        shot->frame = 0; // delete the shot
+        shot->active = 0; // delete the shot
         return true;
       }
     }

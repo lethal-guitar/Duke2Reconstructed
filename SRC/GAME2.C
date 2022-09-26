@@ -848,7 +848,7 @@ void ResetEffectsAndPlayerShots(void)
 
     if (i < MAX_NUM_PLAYER_SHOTS)
     {
-      gmPlayerShotStates[i].frame = 0;
+      gmPlayerShotStates[i].active = 0;
     }
   }
 }
@@ -1371,18 +1371,18 @@ void pascal SpawnPlayerShot(word id, word x, word y, word direction)
 
   for (i = 0; i < MAX_NUM_PLAYER_SHOTS; i++)
   {
-    if (gmPlayerShotStates[i].frame == 0)
+    if (gmPlayerShotStates[i].active == 0)
     {
       state = gmPlayerShotStates + i;
 
-      state->frame = 1;
-      state->sprite = id;
+      state->active = 1;
+      state->id = id;
       state->numFrames = numFrames + 1;
       state->x = x;
       state->y = y;
       state->direction = direction;
 
-      if (state->frame < 28) // [NOTE] Always true
+      if (state->active < 28) // [NOTE] Always true
       {
         SpawnEffect(
           direction + ACT_MUZZLE_FLASH_UP - SD_UP,
@@ -1422,44 +1422,44 @@ void UpdateAndDrawPlayerShots(void)
 
   for (i = 0; i < MAX_NUM_PLAYER_SHOTS; i++)
   {
-    if (gmPlayerShotStates[i].frame == 0) { continue; }
+    if (gmPlayerShotStates[i].active == 0) { continue; }
 
     state = gmPlayerShotStates + i;
 
     // TestShotCollision() in game3.c sets the high bit to mark shots that
     // have hit an enemy.
-    if (state->frame & 0x8000)
+    if (state->active & 0x8000)
     {
-      state->frame &= 0x7FFF;
-      DrawActor(state->sprite, state->frame - 1, state->x, state->y, DS_NORMAL);
+      state->active &= 0x7FFF;
+      DrawActor(state->id, state->active - 1, state->x, state->y, DS_NORMAL);
 
-      state->frame = 0; // delete
+      state->active = 0; // delete
     }
     else
     {
       if (
-        !IsSpriteOnScreen(state->sprite, state->frame - 1, state->x, state->y))
+        !IsSpriteOnScreen(state->id, state->active - 1, state->x, state->y))
       {
-        state->frame = 0; // delete
+        state->active = 0; // delete
         continue;
       }
 
-      DrawActor(state->sprite, state->frame - 1, state->x, state->y, DS_NORMAL);
+      DrawActor(state->id, state->active - 1, state->x, state->y, DS_NORMAL);
 
-      switch (state->sprite)
+      switch (state->id)
       {
         case ACT_REGULAR_SHOT_HORIZONTAL:
         case ACT_REGULAR_SHOT_VERTICAL:
           if (CheckWorldCollision(
-            MD_PROJECTILE, state->sprite, state->frame - 1, state->x, state->y))
+            MD_PROJECTILE, state->id, state->active - 1, state->x, state->y))
           {
             SpawnEffect(
               ACT_FLAME_FX,
-              state->x - (state->sprite == ACT_REGULAR_SHOT_VERTICAL ? 1 : 0),
+              state->x - (state->id == ACT_REGULAR_SHOT_VERTICAL ? 1 : 0),
               state->y + 1,
               EM_RISE_UP,
               0);
-            state->frame = 0; // delete
+            state->active = 0; // delete
           }
           else
           {
@@ -1467,10 +1467,10 @@ void UpdateAndDrawPlayerShots(void)
               += SLOW_SHOT_MOVEMENT[state->direction - SD_UP];
 
             // [NOTE] Unnecessary, since the sprite has only one frame
-            state->frame++;
-            if (state->frame == state->numFrames)
+            state->active++;
+            if (state->active == state->numFrames)
             {
-              state->frame = 1;
+              state->active = 1;
             }
           }
           break;
@@ -1486,10 +1486,10 @@ void UpdateAndDrawPlayerShots(void)
         case ACT_REACTOR_FIRE_R:
         case ACT_DUKES_SHIP_LASER_SHOT:
           // These fly through walls, so no collision checking
-          state->frame++;
-          if (state->frame == state->numFrames)
+          state->active++;
+          if (state->active == state->numFrames)
           {
-            state->frame = 1;
+            state->active = 1;
           }
 
           GET_FIELD(state->direction)
@@ -1512,18 +1512,18 @@ void UpdateAndDrawPlayerShots(void)
         case ACT_DUKE_ROCKET_RIGHT:
           {
             sbyte smokeSpawnX =
-              ROCKET_SMOKE_SPAWN_OFFSET[(state->sprite - SD_UP) * 2];
+              ROCKET_SMOKE_SPAWN_OFFSET[(state->id - SD_UP) * 2];
             sbyte smokeSpawnY =
-              ROCKET_SMOKE_SPAWN_OFFSET[(state->sprite - SD_UP) * 2 + 1];
+              ROCKET_SMOKE_SPAWN_OFFSET[(state->id - SD_UP) * 2 + 1];
 
             if (CheckWorldCollision(
               MD_PROJECTILE,
-              state->sprite,
-              state->frame - 1,
+              state->id,
+              state->active - 1,
               state->x,
               state->y))
             {
-              if (state->sprite < ACT_DUKE_ROCKET_LEFT)
+              if (state->id < ACT_DUKE_ROCKET_LEFT)
               {
                 SpawnEffect(
                   ACT_EXPLOSION_FX_2,
@@ -1543,8 +1543,8 @@ void UpdateAndDrawPlayerShots(void)
               }
 
               PlaySound(SND_EXPLOSION);
-              SpawnBurnEffect(ACT_FLAME_FX, state->sprite, state->x, state->y);
-              state->frame = 0; // delete
+              SpawnBurnEffect(ACT_FLAME_FX, state->id, state->x, state->y);
+              state->active = 0; // delete
             }
             else
             {

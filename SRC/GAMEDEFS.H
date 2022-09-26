@@ -176,8 +176,8 @@ typedef struct {
 // WARNING: The exact memory layout is important here. See
 // UpdateAndDrawPlayerShots().
 typedef struct {
-  word frame; // TODO: rename to active
-  word sprite; // TODO: rename to id
+  word active;
+  word id;
   word numFrames;
   word x;
   word y;
