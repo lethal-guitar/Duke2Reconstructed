@@ -95,6 +95,10 @@ void pascal InitActorState(
  * are also marked by this function, to be deleted next frame in
  * UpdateAndDrawPlayerShots().
  *
+ * In addition to the return value, a second value is returned via the global
+ * variable collidingPlayerShotDirection, which indicates which direction the
+ * player shot was moving into (for horizontal shots only).
+ *
  * Since the collision detection works by going through the list of actors
  * and testing each actor against all shots, an actor can only ever be hit
  * by one shot each frame, but a single shot can cause damage to multiple
@@ -189,6 +193,7 @@ byte pascal TestShotCollision(word handle)
 }
 
 
+/** Test if sprite's bounding box is intersecting specified rectangle */
 bool pascal IsSpriteInRect(
   word id, word x, word y, word left, word top, word right, word bottom)
 {
@@ -220,6 +225,7 @@ bool pascal IsSpriteInRect(
 }
 
 
+/** Test if a player shot intersects the given rectangle, delete it if so */
 bool pascal FindPlayerShotInRect(word left, word top, word right, word bottom)
 {
   PlayerShot* shot;
@@ -244,11 +250,12 @@ bool pascal FindPlayerShotInRect(word left, word top, word right, word bottom)
 }
 
 
+/** Try unlocking a key card slot or key hole actor */
 void pascal TryUnlockingDoor(bool* pSuccess, word neededKeyId, word handle)
 {
   ActorState* actor = gmActorStates + handle;
 
-  if (actor->var1)
+  if (actor->var1) // door not unlocked yet?
   {
     plBlockLookingUp = true;
 
@@ -257,7 +264,11 @@ void pascal TryUnlockingDoor(bool* pSuccess, word neededKeyId, word handle)
       RemoveFromInventory(neededKeyId))
     {
       *pSuccess = true;
-      plInteractAnimTicks = true;
+
+      // Let the player show the "interact" animation
+      plInteractAnimTicks = 1;
+
+      // Mark lock as unlocked
       actor->var1 = false;
     }
   }
@@ -268,6 +279,11 @@ void pascal TryUnlockingDoor(bool* pSuccess, word neededKeyId, word handle)
 }
 
 
+/** Draw a collected letter indicator onto the HUD
+ *
+ * This would work for any type of sprite, but is only used for the letter
+ * collection indicators.
+ */
 void HUD_DrawLetterIndicator(word id)
 {
   SetDrawPage(gfxCurrentDisplayPage);
@@ -278,6 +294,7 @@ void HUD_DrawLetterIndicator(word id)
 }
 
 
+/** Check if the player has collected all letters, but in the wrong order */
 void CheckLetterCollectionPityBonus(void)
 {
   // [BUG] `plCollectedLetters != 5` is always true, if the first condition is
@@ -321,6 +338,18 @@ bool pascal Boss3_IsTouchingPlayer(word handle)
 }
 
 
+/** Handle actors touching the player
+ *
+ * The primary job of this function is to cause damage to the player when
+ * touching enemies, and to handle picking up collectible items.
+ * Basically, this function defines what happens for each type of actor when
+ * that actor touches the player. It also performs the collision detection,
+ * by testing if the given actor's sprite intersects the player's.
+ *
+ * [NOTE] A lot of the code here could've been avoided if the actor system had
+ * been extended to feature a "damages player" flag that actors could set on
+ * themselves, which would then be handled in UpdateAndDrawActors().
+ */
 void pascal UpdateActorPlayerCollision(word handle)
 {
   ActorState* state = gmActorStates + handle;
@@ -336,6 +365,7 @@ void pascal UpdateActorPlayerCollision(word handle)
     switch (state->id)
     {
       case ACT_AGGRESSIVE_PRISONER:
+        // Only damage the player if currently grabbing
         if (state->var1 == true)
         {
           DamagePlayer();
@@ -345,6 +375,7 @@ void pascal UpdateActorPlayerCollision(word handle)
       case ACT_SUPER_FORCE_FIELD_L:
         if (plCloakTimeLeft)
         {
+          // Player is cloaked, initiate the destruction sequence
           if (!state->var3)
           {
             state->var3 = 1;
@@ -353,11 +384,13 @@ void pascal UpdateActorPlayerCollision(word handle)
           break;
         }
 
+        // Activate animation, handled in Act_SuperForceField()
         if (!state->var1)
         {
           state->var1 = 1;
         }
 
+        // Prevent the player from passing through
         if (plPosX + 2 <= state->x)
         {
           plPosX--;
@@ -525,7 +558,8 @@ void pascal UpdateActorPlayerCollision(word handle)
           (plAttachedSpider1 == 0 && state->gravityState != 0) ||
           ((plAttachedSpider2 == 0 || plAttachedSpider3 == 0) &&
           state->scoreGiven != 0 && // score field is repurposed as state
-                                    // variable
+                                    // variable, indicating if the spider
+                                    // is on the ground
           state->frame < 12))
         {
           if (!state->gravityState) // on ground
@@ -545,13 +579,14 @@ void pascal UpdateActorPlayerCollision(word handle)
           }
 
           state->health = 0; // make invincible
-          state->var4 = 1;
+          state->var4 = 1; // mark as attached to player
           state->gravityAffected = false;
           state->gravityState = 0;
         }
         break;
 
       case ACT_SMASH_HAMMER:
+        // Only damage player while smashing down
         if (state->var3 == 1)
         {
           DamagePlayer();
@@ -567,7 +602,8 @@ void pascal UpdateActorPlayerCollision(word handle)
         break;
 
       case ACT_LASER_TURRET:
-        if (state->var1 == 0)
+        // Only damage player if not currently spinning
+        if (!state->var1)
         {
           DamagePlayer();
         }
@@ -841,6 +877,8 @@ void pascal UpdateActorPlayerCollision(word handle)
         break;
 
       case ACT_HEALTH_MOLECULE:
+        // Only allow picking up the item if it has completed the upwards part
+        // of the fly-up sequence after shooting the containing box
         if (state->var1 > 8)
         {
           ShowTutorial(
@@ -874,6 +912,11 @@ void pascal UpdateActorPlayerCollision(word handle)
       case ACT_N:
         HUD_DrawLetterIndicator(ACT_LETTER_INDICATOR_N);
 
+        // The letter collection state is stored in plCollectedLetters. The
+        // low byte of that value is the number of letters that have been
+        // collected in the right order, while the high byte is a bitmask which
+        // has one bit set for each letter that has been collected (regardless
+        // of order).
         if (plCollectedLetters == 0)
         {
           plCollectedLetters++;
@@ -897,6 +940,7 @@ void pascal UpdateActorPlayerCollision(word handle)
       case ACT_U:
         HUD_DrawLetterIndicator(ACT_LETTER_INDICATOR_U);
 
+        // See ACT_N above
         if ((plCollectedLetters & 7) == 1)
         {
           plCollectedLetters++;
@@ -920,6 +964,7 @@ void pascal UpdateActorPlayerCollision(word handle)
       case ACT_K:
         HUD_DrawLetterIndicator(ACT_LETTER_INDICATOR_K);
 
+        // See ACT_N above
         if ((plCollectedLetters & 7) == 2)
         {
           plCollectedLetters++;
@@ -943,6 +988,7 @@ void pascal UpdateActorPlayerCollision(word handle)
       case ACT_E:
         HUD_DrawLetterIndicator(ACT_LETTER_INDICATOR_E);
 
+        // See ACT_N above
         if ((plCollectedLetters & 7) == 3)
         {
           plCollectedLetters++;
@@ -968,6 +1014,7 @@ void pascal UpdateActorPlayerCollision(word handle)
 
         HUD_DrawLetterIndicator(ACT_LETTER_INDICATOR_M);
 
+        // See ACT_N above
         if ((plCollectedLetters & 7) == 4)
         {
           byte i;
@@ -1010,6 +1057,8 @@ void pascal UpdateActorPlayerCollision(word handle)
       case ACT_CLOAKING_DEVICE:
       case ACT_BLUE_KEY:
       case ACT_CIRCUIT_CARD:
+        // Only allow picking up the item if it has completed the upwards part
+        // of the fly-up sequence after shooting the containing box
         if (state->var1 <= 8) { break; }
 
         PlaySound(SND_ITEM_PICKUP);
@@ -1048,6 +1097,8 @@ void pascal UpdateActorPlayerCollision(word handle)
         break;
 
       case ACT_RAPID_FIRE:
+        // Only allow picking up the item if it has completed the upwards part
+        // of the fly-up sequence after shooting the containing box
         if (state->var1 > 8)
         {
           PlaySound(SND_WEAPON_PICKUP);
@@ -1069,6 +1120,8 @@ void pascal UpdateActorPlayerCollision(word handle)
         break;
 
       case ACT_SPECIAL_HINT_MACHINE:
+        // If the globe has already been placed onto the hint machine, do
+        // nothing
         if (state->var1) { break; }
 
         if (RemoveFromInventory(ACT_SPECIAL_HINT_GLOBE_ICON))
@@ -1088,6 +1141,7 @@ void pascal UpdateActorPlayerCollision(word handle)
               0);
           }
 
+          // Mark the machine as having the globe placed
           state->var1 = true;
 
           // The scripting system also handles showing the hint machine
@@ -1156,6 +1210,10 @@ void pascal UpdateActorPlayerCollision(word handle)
             TUT_TELEPORTER, "PRESS UP OR ENTER TO USE*THE TRANSPORTER.*");
         }
 
+        // Check if the player is interacting with the teleporter.
+        // The active area is smaller than the sprite's bounding box, so we
+        // need to do an additional check here even though we already called
+        // AreSpritesTouching() at the top of this function.
         if (
           state->x <= plPosX && state->x + 3 >= plPosX && state->y == plPosY &&
           (inputMoveUp || kbKeyState[SCANCODE_ENTER]) &&
@@ -1166,6 +1224,23 @@ void pascal UpdateActorPlayerCollision(word handle)
 
           PlaySound(SND_TELEPORT);
 
+          // The way the teleport target is found is based on the actor ID.
+          // There are two actor IDs that both spawn a teleporter into the
+          // level.  Each teleporter looks for the first actor in the list that
+          // has an ID which is also a teleporter, but not the one the source
+          // teleporter has. Since there is only one teleporter sprite, the
+          // actual ID of the actor is set to the same for both, but the
+          // original ID specified in the level file is stored in var2.
+          //
+          // One consequence of this design is that there can never be more
+          // than one teleport destination in a level - it's not possible to
+          // have two independent teleporter connections, for example.  Placing
+          // more than two won't cause anything serious to happen, but the
+          // result is unlikely to be what the level designer intends to happen.
+          //
+          // Here, we determine the right counterpart ID to use based on our
+          // own ID, and also handle the "backdrop switch on teleport" logic
+          // if enabled.
           if (state->var2 == ACT_TELEPORTER_1)
           {
             if (mapSwitchBackdropOnTeleport)
@@ -1185,6 +1260,8 @@ void pascal UpdateActorPlayerCollision(word handle)
             counterpartId = ACT_TELEPORTER_1;
           }
 
+          // Now go through the entire list of actors, and find the first one
+          // that is a) a teleporter and b) has the right counterpart ID.
           for (i = 0; i < gmNumActors; i++)
           {
             candidate = gmActorStates + i;
@@ -1193,6 +1270,8 @@ void pascal UpdateActorPlayerCollision(word handle)
               counterpartId == candidate->var2 &&
               candidate->id == ACT_TELEPORTER_2)
             {
+              // We have found our destination!
+
               // Clear any flying tile debris, since debris pieces don't take
               // the camera position into account and thus would suddenly appear
               // at the new location unless cleared.
@@ -1206,9 +1285,10 @@ void pascal UpdateActorPlayerCollision(word handle)
             }
           }
 
+          // We didn't find a suitable destination. If there's only one
+          // teleporter in a level, it acts as level exit.
           if (i == gmNumActors)
           {
-            // If there's only one teleporter in a level, it acts as exit
             gmGameState = GS_LEVEL_FINISHED;
           }
         }
@@ -1219,6 +1299,7 @@ void pascal UpdateActorPlayerCollision(word handle)
 }
 
 
+/** Apply damage to actor. Return true if actor was killed, false otherwise */
 bool pascal DamageActor(word damage, word handle)
 {
   ActorState* actor = gmActorStates + handle;
@@ -1246,6 +1327,15 @@ bool pascal DamageActor(word damage, word handle)
 }
 
 
+/** Handle actor being hit by a player shot
+ *
+ * Unlike UpdateActorPlayerCollision(), this function doesn't perform collision
+ * detection by itself. It expects to be invoked after we determined that an
+ * actor was hit or took damage.
+ *
+ * It primarily defines what kind of effects (explosions, particles, debris) to
+ * trigger when an actor is destroyed by the player.
+ */
 void pascal HandleActorShotCollision(int damage, word handle)
 {
   register ActorState* state = gmActorStates + handle;
@@ -1256,6 +1346,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
   switch (state->id)
   {
     case ACT_SUPER_FORCE_FIELD_L:
+      // Play back an animation of an electrical arc. See Act_SuperForceField().
       if (!state->var1)
       {
         state->var1 = true;
@@ -1275,6 +1366,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_BOSS_EPISODE_2:
       if (DamageActor(damage, handle))
       {
+        // Trigger death animation
         state->var5 = 1;
       }
 
@@ -1284,6 +1376,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_BOSS_EPISODE_1:
       if (DamageActor(damage, handle))
       {
+        // Trigger death animation
         state->var3 = 2;
       }
 
@@ -1293,6 +1386,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_BOSS_EPISODE_3:
       if (DamageActor(damage, handle))
       {
+        // Trigger death animation
         state->var3 = 2;
       }
 
@@ -1302,6 +1396,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_BOSS_EPISODE_4:
       if (DamageActor(damage, handle))
       {
+        // Trigger death animation
         state->var3 = 2;
       }
 
@@ -1333,10 +1428,21 @@ void pascal HandleActorShotCollision(int damage, word handle)
       {
         if (state->var3)
         {
+          // Missile is intact, trigger launch
           state->var1 = 1;
         }
         else
         {
+          // Missile is broken, trigger fall over animation
+          //
+          // [BUG] Because SpawnActorInSlot() never sets var3, this code path
+          // here is taken for both types of missile. The consequence is that
+          // shooting an intact missile will skip one frame of the launch
+          // sequence in case it's shot from the left (i.e., projectil coming
+          // from the right).
+          //
+          // I'm not sure why the code here doesn't check state->id instead of
+          // var3.
           if (collidingPlayerShotDirection == SD_LEFT)
           {
             state->var1 = 1;
@@ -1360,10 +1466,15 @@ void pascal HandleActorShotCollision(int damage, word handle)
         SpawnBurnEffect(
           ACT_WHITE_CIRCLE_FLASH_FX, state->id, state->x, state->y);
 
-        // Make the sprite appear for one more frame after the actor is
+        // Make the sprite appear for a few more frames after the actor is
         // deleted
         SpawnEffect(ACT_ELECTRIC_REACTOR, state->x, state->y, EM_NONE, 0);
 
+        // [NOTE] This spawns 24 effects in total. There can only be 18 effects
+        // at max, and we've already used 2 effect slots for the burn effect
+        // and the placeholder sprite. So only the first 16 loop iterations
+        // actually have any effect. In case more effects are already present
+        // at the time the reactor is destroyed, the number will be even lower.
         for (i = 0; i < 12; i++)
         {
           SpawnEffect(
@@ -1382,6 +1493,8 @@ void pascal HandleActorShotCollision(int damage, word handle)
 
         PLAY_EXPLOSION_SOUND();
 
+        // Switch to the alternate backdrop in case the "reactor destruction
+        // event" is configured. This is used in E1L5.
         if (mapHasReactorDestructionEvent)
         {
           bdAddressAdjust = 0x4000;
@@ -1394,6 +1507,9 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_SLIME_CONTAINER:
       if (DamageActor(damage, handle))
       {
+        // Trigger the "container breaking" animation. The container actor
+        // stays active, it plays the animation and then spawns a slime blob.
+        // See Act_SlimeContainer.
         state->var1 = 1;
         state->frame = 2;
         PlaySound(SND_GLASS_BREAKING);
@@ -1534,6 +1650,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
       break;
 
     case ACT_SPIDER:
+      // Spider can't be damaged if attached to the player
       if (
         plAttachedSpider1 == handle ||
         plAttachedSpider2 == handle ||
@@ -1552,6 +1669,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
       break;
 
     case ACT_AGGRESSIVE_PRISONER:
+      // Only allow being damaged while grabbing
       if (state->var1 != 2)
       {
         // [BUG] This should set health to 0 so that the actor doesn't
@@ -1593,6 +1711,10 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_LASER_TURRET:
       if (state->var1 == 0) // not currently spinning
       {
+        // [NOTE] I'm not sure why there are two variables to track the player's
+        // current weapon. This is the only place where this alternate variable
+        // is used, everything else uses plWeapon.
+        // The variable is set in HUD_DrawWeapon().
         if (plWeapon_hud != WPN_REGULAR || plState == PS_USING_SHIP)
         {
           switch (collidingPlayerShotDirection)
@@ -1638,6 +1760,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
       break;
 
     case ACT_BOUNCING_SPIKE_BALL:
+      // Make it fly left/right when hit on either side. See Act_SpikeBall.
       if (collidingPlayerShotDirection == SD_LEFT)
       {
         state->var1 = 1;
@@ -1748,6 +1871,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_BLUE_BOX:
       if (DamageActor(damage, handle) && !state->var1)
       {
+        // Trigger the "spawn item" sequence in Act_ItemBox
         state->var1 = 1;
 
         PLAY_EXPLOSION_SOUND();
@@ -1761,12 +1885,14 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_TURKEY:
       PlaySound(SND_BIOLOGICAL_ENEMY_DESTROYED);
 
-      if (state->var2 != 2)
+      if (state->var2 != 2) // should always be true
       {
         SpawnEffect(ACT_SMOKE_CLOUD_FX, state->x, state->y, EM_NONE, 0);
       }
 
       state->health = 0; // make invincible
+
+      // This turns a walking turkey into a cooked turkey. See Act_Turkey.
       state->var2 = 2;
       break;
 
@@ -1774,6 +1900,8 @@ void pascal HandleActorShotCollision(int damage, word handle)
     case ACT_SODA_6_PACK:
       if (!state->var3)
       {
+        // Trigger either the "soda can rocket" or make a six pack explode.
+        // See Act_ItemBox.
         state->var3 = 1;
       }
       break;
@@ -1855,6 +1983,26 @@ void pascal HandleActorShotCollision(int damage, word handle)
 }
 
 
+/** Utility function for moving actors around while respecting world collision
+ *
+ * This function checks if the given actor collides with the world (i.e., a
+ * wall, floor, or ceiling) in the given direction. It must be called _after_
+ * modifying the actor's position to move in the intended direction. If there's
+ * a collision, the actor's position is adjusted in the _opposite_ direction
+ * to undo the move. So the intended usage looks like this:
+ *
+ *   // Move actor right
+ *   state->x += 1;
+ *
+ *   // Check collision and undo move if necessary
+ *   ApplyWorldCollision(handle, MD_RIGHT);
+ *
+ * The function will return a non-zero value if there was a collision, 0
+ * otherwise. This can be used to make an actor turn around after reaching
+ * a wall, for example.
+ *
+ * TODO: Document the allowStairStepping flag
+ */
 int pascal ApplyWorldCollision(word handle, word direction)
 {
   register ActorState* actor = gmActorStates + handle;
@@ -1930,13 +2078,10 @@ int pascal ApplyWorldCollision(word handle, word direction)
       {
         canMove = true;
       }
-      else
+      else if (!actor->allowStairStepping)
       {
-        if (!actor->allowStairStepping)
-        {
-          canMove = false;
-          actor->x--;
-        }
+        canMove = false;
+        actor->x--;
       }
     }
 
@@ -1950,6 +2095,7 @@ int pascal ApplyWorldCollision(word handle, word direction)
 }
 
 
+/** Check if center-to-center distance between actor & player is below value */
 bool pascal PlayerInRange(word handle, word distance)
 {
   register ActorState* actor = gmActorStates + handle;
@@ -1962,6 +2108,10 @@ bool pascal PlayerInRange(word handle, word distance)
   width = AINFO_WIDTH(offset);
   actorCenterX = actor->x + width / 2;
 
+  // This is to account for the player's weapon, which protrudes to the left
+  // if the player is facing left. That part of the sprite isn't considered
+  // part of the player, so we offset by 1 to get the distance to the center
+  // of the player's body.
   if (plActorId == ACT_DUKE_L)
   {
     playerOffsetToCenter += 1;
@@ -2327,13 +2477,11 @@ void pascal HUD_ShowOnRadar(word x, word y)
     // still appear on the radar.  For those actors, the color on screen will
     // actually be different!  In case an actor is below the viewport, the last
     // function that was called before drawing the radar dot (and which modifies
-    // the EGA state) will be SetPixel, from showing the previous actor on the
-    // radar. SetPixel itself sets the correct EGA map mask needed for its
-    // operation before returning, so the next SetPixel call after that will
-    // output the color as specified.  Meaning, actors below the viewport which
-    // appear on the radar actually show a brown dot (usually - it's also
-    // possible for them to appear as white, depending on what happened before
-    // their radar dot is drawn).
+    // the EGA state) will usually be SetPixel, from showing the previous actor
+    // on the radar. SetPixel itself sets the correct EGA map mask needed for
+    // its operation before returning, so the next SetPixel call after that
+    // will output the color as specified.  Meaning, actors below the viewport
+    // which appear on the radar actually show a brown dot (usually).
     //
     // Now, if this all sounds overly complicated, it's because none of this is
     // intentional - it's just whatever coincidences lead to the EGA state being
@@ -2666,8 +2814,7 @@ void UpdateAndDrawActors(void)
   // actors generate a DrawSprite call, but no SetPixel call since
   // HUD_ShowOnRadar is skipped if the draw style is DS_INVISIBLE. This then
   // prevents the blinking dot from appearing correctly.
-  // To make this work without reliably, the map mask should explicitly be set
-  // here.
+  // To make this work reliably, the map mask should explicitly be set here.
 
   // Update the color cycle state. This alternates through light grey, dark red,
   // red, and orange when combined with CLR_LIGHT_GREY in the SetPixel call

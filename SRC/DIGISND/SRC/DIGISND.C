@@ -1361,10 +1361,13 @@ static void WriteSBAdLibReg(byte reg, byte val)
 {
   DISABLE_INTERRUPTS();
 
+  // Write address register
   asm mov   dx, [sbAlAddress]
   asm mov   al, [reg]
   asm out   dx, al
 
+  // Wait for at least 3.3 usecs by executing 6 IN instructions
+  // (as recommended in the AdLib documentation)
   asm in    al, dx
   asm in    al, dx
   asm in    al, dx
@@ -1372,15 +1375,16 @@ static void WriteSBAdLibReg(byte reg, byte val)
   asm in    al, dx
   asm in    al, dx
 
+  // Write data register
   asm inc   dx
-
   asm mov   al, [val]
   asm out   dx, al
 
   ENABLE_INTERRUPTS();
 
+  // Wait for at least 23 usecs by executing 35 IN instructions
+  // (as recommended in the AdLib documentation)
   asm dec   dx
-
   asm in    al, dx
   asm in    al, dx
   asm in    al, dx

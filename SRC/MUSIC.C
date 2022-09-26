@@ -357,13 +357,29 @@ static void SetupTimerFrequency()
 }
 
 
-/** Stops AdLib sound output and resets its state */
+/** Stops all AdLib channels used for music */
 void ResetAdLibMusicChannels(void)
 {
   int i;
 
+  // Silence any rhythm mode instruments (none of the music files shipping with
+  // the game make use of rhythm mode)
   WriteAdLibReg(0xBD, 0);
 
+  // Set the "key on" bit to 0 for AdLib channels 2 to 9. This stops any
+  // currently playing notes on those channels, but doesn't necessarily stop
+  // audio output, depending on the release envelope setting for the instrument.
+  // If audio output keeps going, it will be at a fairly low frequency, since
+  // setting the register to 0 doesn't just alter the "key on" bit, it also
+  // changes the octave (aka "block") to the lowest one and unsets the two most
+  // significant bits of the channel's current frequency value.
+  //
+  // Channel 1 is reserved for sound effects, and thus left unchanged.
+  //
+  // [BUG] The loop should only go from 0 to 7, i.e. the condition should be
+  // `i < 8`. There are only 9 AdLib channels in total, with 0xB8 addressing
+  // the 9th channel. The loop thus ends up writing two non-existant registers,
+  // but this doesn't seem to cause any issues.
   for (i = 0; i < 10; i++)
   {
     WriteAdLibReg(0xB1 + (byte)i, 0);
