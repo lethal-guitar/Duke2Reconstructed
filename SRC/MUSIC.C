@@ -332,7 +332,7 @@ static void interrupt TimerInterruptHandler(void)
   // replaced with the version here because the authors didn't fully understand
   // the original code and assumed that it could be replaced with a simpler
   // version.
-  if (!((long)sysFastTicksElapsed & 0xF)) // % 16
+  if (!(sysFastTicksElapsed % 16))
   {
     sysSavedTimerIntHandler();
   }
@@ -366,7 +366,7 @@ void ResetAdLibMusicChannels(void)
 
   for (i = 0; i < 10; i++)
   {
-    WriteAdLibReg((byte)i + 0xB1, 0);
+    WriteAdLibReg(0xB1 + (byte)i, 0);
   }
 }
 
