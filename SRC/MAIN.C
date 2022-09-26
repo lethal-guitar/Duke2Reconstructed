@@ -555,7 +555,7 @@ static void ResetGameState(void)
     gmPlayerTookDamage = false;
 
     gmNumMovingMapParts = 0;
-    for (i = 0; i < 70; i++)
+    for (i = 0; i < MAX_NUM_MOVING_MAP_PARTS; i++)
     {
       gmMovingMapParts[i].type = 0;
     }

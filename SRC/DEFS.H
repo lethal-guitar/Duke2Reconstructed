@@ -62,6 +62,7 @@
 #define MAX_NUM_ACTORS          448
 #define MAX_NUM_EFFECTS          18
 #define MAX_NUM_PLAYER_SHOTS      6
+#define MAX_NUM_MOVING_MAP_PARTS 70
 
 
 typedef enum
