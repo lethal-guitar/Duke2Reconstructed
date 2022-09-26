@@ -69,7 +69,11 @@ typedef enum {
   TUT_LETTERS_COLLECTED,
   TUT_SODA,
   TUT_FOUND_FORCE_FIELD,
-  TUT_FOUND_KEYHOLE
+  TUT_FOUND_KEYHOLE,
+
+  // 5 possible ID numbers are unused
+
+  NUM_TUTORIAL_IDS = 30
 } TutorialId;
 
 

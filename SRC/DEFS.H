@@ -46,6 +46,7 @@
 #define MAX_AMMO_FLAMETHROWER    64
 #define PLAYER_MAX_HEALTH         9
 #define INITIAL_MERCY_FRAMES     20
+#define NUM_INVENTORY_SLOTS       6
 
 #define MM_TOTAL_SIZE        390000
 #define MM_MAX_NUM_CHUNKS      1150

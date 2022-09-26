@@ -853,7 +853,7 @@ void ResetPlayerState(void)
   plHealth = PLAYER_MAX_HEALTH;
   plRapidFireTimeLeft = 0;
 
-  for (i = 0; i < 30; i++)
+  for (i = 0; i < NUM_TUTORIAL_IDS; i++)
   {
     gmTutorialsShown[i] = false;
   }

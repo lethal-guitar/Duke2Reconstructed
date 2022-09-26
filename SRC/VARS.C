@@ -139,7 +139,7 @@ bool uiDisplayPageChanged;
 // There are only 6 slots in the inventory. The 7th array element serves as a
 // sentinel value, to indicate the end of the inventory in case the player
 // has 6 items.
-word plInventory[7];
+word plInventory[NUM_INVENTORY_SLOTS + 1];
 
 byte gmCurrentEpisode;
 byte gmCurrentLevel;
@@ -148,7 +148,7 @@ byte gmCurrentLevel;
 // It's theoretically possible that this array only holds 448 elements,
 // and is followed by 64 bytes of unused variables, but that seems
 // unlikely.
-ActorState gmActorStates[450];
+ActorState gmActorStates[MAX_NUM_ACTORS + 2];
 
 word levelActorListSize;
 
@@ -158,8 +158,8 @@ byte gmGameState;
 
 byte unused1;
 
-EffectState gmEffectStates[18];
-PlayerShot gmPlayerShotStates[6];
+EffectState gmEffectStates[MAX_NUM_EFFECTS];
+PlayerShot gmPlayerShotStates[MAX_NUM_PLAYER_SHOTS];
 
 bool inputMoveUp;
 bool inputMoveDown;
@@ -220,13 +220,13 @@ byte plWeapon_hud;
 
 char* hudCurrentMessage;
 
-bool gmTutorialsShown[30];
+bool gmTutorialsShown[NUM_TUTORIAL_IDS];
 
 byte gmReactorDestructionStep;
 byte gmNumMovingMapParts;
 word plCloakTimeLeft;
 
-MovingMapPartState gmMovingMapParts[70];
+MovingMapPartState gmMovingMapParts[MAX_NUM_MOVING_MAP_PARTS];
 
 byte far* sndDigitizedSounds[50];
 
@@ -328,10 +328,12 @@ int jsThresholdUp;
 
 word gfxPaletteForFade[16 * 3];
 
-byte hudInventoryBlinkTimeLeft[7];
+// See plInventory above
+byte hudInventoryBlinkTimeLeft[NUM_INVENTORY_SLOTS + 1];
 
 SaveSlotName saveSlotNames[NUM_SAVE_SLOTS];
 
+// +1 for zero terminator
 char gmHighScoreNames[NUM_HIGH_SCORE_ENTRIES][HIGH_SCORE_NAME_MAX_LEN + 1];
 
 dword gmHighScoreList[NUM_HIGH_SCORE_ENTRIES];

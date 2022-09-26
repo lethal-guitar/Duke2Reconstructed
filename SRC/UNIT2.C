@@ -281,7 +281,7 @@ void pascal WriteSavedGame(char idChar)
   gmTutorialsShown[TUT_HINT_MACHINE] = false;
 
   WriteWord(bdAddressAdjust, fd);
-  _write(fd, gmTutorialsShown, 30);
+  _write(fd, gmTutorialsShown, NUM_TUTORIAL_IDS);
   _write(fd, &plScore, sizeof(dword));
 
   CloseFile(fd);
@@ -331,7 +331,7 @@ bool pascal ReadSavedGame(char idChar)
   // (checkpoint) - this effectively causes tutorials that the player has
   // triggered after reaching a beacon to be shown again if the player dies and
   // respawns.
-  _read(fd, gmTutorialsShown, 30);
+  _read(fd, gmTutorialsShown, NUM_TUTORIAL_IDS);
 
   // When restoring from a beacon, the player keeps their score.
   if (!gmBeaconActivated)
