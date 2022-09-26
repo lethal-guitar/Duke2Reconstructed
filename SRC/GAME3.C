@@ -1437,8 +1437,8 @@ void pascal HandleActorShotCollision(int damage, word handle)
           // [BUG] Because SpawnActorInSlot() never sets var3, this code path
           // here is taken for both types of missile. The consequence is that
           // shooting an intact missile will skip one frame of the launch
-          // sequence in case it's shot from the left (i.e., projectil coming
-          // from the right).
+          // sequence in case it's shot from the left (i.e., projectile was
+          // flying right).
           //
           // I'm not sure why the code here doesn't check state->id instead of
           // var3.
@@ -1493,7 +1493,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
         PLAY_EXPLOSION_SOUND();
 
         // Switch to the alternate backdrop in case the "reactor destruction
-        // event" is configured. This is used in E1L5.
+        // event" is active for the current level. This is used in E1L5.
         if (mapHasReactorDestructionEvent)
         {
           bdAddressAdjust = 0x4000;
@@ -1650,6 +1650,9 @@ void pascal HandleActorShotCollision(int damage, word handle)
 
     case ACT_SPIDER:
       // Spider can't be damaged if attached to the player
+      // [NOTE] This is redundant, since the spider's health is set
+      // to 0 when attaching to the player, and that excludes it from
+      // shot collision detection.
       if (
         plAttachedSpider1 == handle ||
         plAttachedSpider2 == handle ||

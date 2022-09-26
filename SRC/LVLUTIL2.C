@@ -31,6 +31,16 @@ TODO: Document this file and the functions here
 *******************************************************************************/
 
 
+/** Calculate bytes needed to represent `data` in RLE-compressed form
+ *
+ * This function is not used in the shipping game. We can only speculate as to
+ * what it was used for - perhaps the code to compress the extra data in level
+ * files was part of the game executable, not the level editor? Or maybe it
+ * was used for some experiments to make a decision on what kind of compression
+ * scheme to use, and then never removed? Perhaps the decompression code was
+ * copied from another code base, and this function was accidentally copied
+ * along with it?
+ */
 int pascal CalcCompressedSize(byte far* data, int size)
 {
   register int i;
@@ -95,6 +105,7 @@ nextBlock:
 }
 
 
+/** Decompress RLE-compressed data from `src` into `dest` */
 void pascal DecompressRLE(byte far* src, byte far* dest)
 {
   sbyte i;

@@ -619,6 +619,7 @@ int pascal CheckWorldCollision(
   }
   else
   {
+    // Otherwise, if we're not checking the player, apply x/y offset.
     x += AINFO_X_OFFSET(offset);
     y += AINFO_Y_OFFSET(offset);
   }
@@ -626,31 +627,58 @@ int pascal CheckWorldCollision(
   switch (direction)
   {
     case MD_PROJECTILE:
+      // Projectile (player shot) collision detection works a little
+      // differently, presumably for speed reasons. The code here checks
+      // both the left and top edges of the sprite's bounding box for
+      // collision. This means it's not necessary to specify a movement
+      // direction, the check always works - but only for sprites which are
+      // exactly one tile in one dimension, e.g. 1x4 or 4x1. This happens to
+      // apply to almost all player shots, only the flame thrower and reactor
+      // fire are exceptions. But both of those fly through walls and thus
+      // don't need collision detection.
+      //
+      // Side-note: The reactor fire is not something the player can shoot,
+      // it appears when the player destroys a reactor. But it is still
+      // implemented as a player shot on the engine side.
       bboxTop = y - height + 1;
 
+      // Top of the map is never considered solid
       if (bboxTop < 0 || y == 0) { return CR_NONE; }
 
+      // Start at map tile underneath the sprite's top-left corner
       tileData = mapData + ((y - height + 1) << mapWidthShift) + x;
 
+      // Check the top edge. This is the entire length of the sprite for
+      // horizontal shots, and only the top-most tile for vertical shots.
       for (i = 0; i < width; i++)
       {
         attributes = *(gfxTilesetAttributes + (*(tileData + i) >> 3));
 
+        // Treat composite tiles as not solid - and abort the entire check.
         if (*(tileData + i) & 0x8000) { return CR_NONE; }
 
+        // If any of the checked tiles is solid in any direction, we have a
+        // hit
         if (attributes & 0xF) { return CR_COLLISION; }
       }
 
+      // Start at map tile underneath the sprite's bottom-left corner
       tileData = mapData + (y << mapWidthShift) + x;
 
+      // Check left edge, this is the entire height of the sprite for vertical
+      // shots, and only the left-most tile for horizontal shots
       for (i = 0; i < height; i++)
       {
         attributes = *(gfxTilesetAttributes + (*tileData >> 3));
 
+        // Treat composite tiles as not solid - and abort the entire check.
         if (*tileData & 0x8000) { return CR_NONE; }
 
+        // If any of the checked tiles is solid in any direction, we have a
+        // hit
         if (attributes & 0xF) { return CR_COLLISION; }
 
+        // Go up by one tile
         tileData -= mapWidth;
       }
 
@@ -662,6 +690,7 @@ int pascal CheckWorldCollision(
       // Upper edge outside the map is never solid
       if (bboxTop < 0) { return CR_NONE; }
 
+      // Start at map tile underneath top-left corner of the sprite
       tileData = mapData + ((y - height + 1) << mapWidthShift) + x;
 
       if (isPlayer && HAS_TILE_ATTRIBUTE(*(tileData + 1), TA_CLIMBABLE))
@@ -669,6 +698,7 @@ int pascal CheckWorldCollision(
         return CR_CLIMBABLE;
       }
 
+      // Check top edge of the sprite
       for (i = 0; i < width; i++)
       {
         if (HAS_TILE_ATTRIBUTE(*(tileData + i), TA_SOLID_BOTTOM))
@@ -677,6 +707,7 @@ int pascal CheckWorldCollision(
         }
       }
 
+      // Special logic for climbing ladders
       if (isPlayer)
       {
         if (HAS_TILE_ATTRIBUTE(*(tileData + 1), TA_LADDER))
@@ -686,6 +717,7 @@ int pascal CheckWorldCollision(
 
         if (inputMoveLeft || inputMoveRight)
         {
+          // No-op
         }
         else
         {
@@ -706,13 +738,16 @@ int pascal CheckWorldCollision(
       return CR_NONE;
 
     case MD_DOWN:
+      // Start at map tile underneath sprite's bottom-left corner
       tileData = mapData + (y << mapWidthShift) + x;
 
       // Bottom edge outside the map is never solid
       if (y > mapBottom) { return CR_NONE; }
 
+      // Check bottom edge of the sprite
       for (i = 0; i < width; i++)
       {
+        // Conveyor belt checks
         if (HAS_TILE_ATTRIBUTE(*(tileData + i), TA_CONVEYOR_L))
         {
           retConveyorBeltCheckResult = CB_LEFT;
@@ -726,12 +761,14 @@ int pascal CheckWorldCollision(
           retConveyorBeltCheckResult = CB_RIGHT;
         }
 
+        // Collision check
         if (HAS_TILE_ATTRIBUTE(*(tileData + i), TA_SOLID_TOP))
         {
           return CR_COLLISION;
         }
       }
 
+      // Special logic for climbing ladders
       if (isPlayer && HAS_TILE_ATTRIBUTE(*(tileData + 1), TA_LADDER))
       {
         return CR_LADDER;
@@ -750,8 +787,10 @@ int pascal CheckWorldCollision(
       // unsigned.
       if (x > mapWidth) { return CR_COLLISION; }
 
+      // Start at map tile underneath the sprite's bottom-left corner
       tileData = mapData + (y << mapWidthShift) + x;
 
+      // Check the sprite's left edge
       for (i = 0; i < height; i++)
       {
         if (HAS_TILE_ATTRIBUTE(*tileData, TA_SOLID_RIGHT))
@@ -773,6 +812,7 @@ int pascal CheckWorldCollision(
           }
         }
 
+        // Go up by one map tile
         tileData -= mapWidth;
       }
 
@@ -795,8 +835,10 @@ int pascal CheckWorldCollision(
       // Right edge outside the map is always solid
       if (x + width - 1 >= mapWidth) { return CR_COLLISION; }
 
+      // Start at map tile underneath the sprite's bottom-right corner
       tileData = mapData + (y << mapWidthShift) + x + width - 1;
 
+      // Check sprite's right edge
       for (i = 0; i < height; i++)
       {
         if (HAS_TILE_ATTRIBUTE(*tileData, TA_SOLID_LEFT))
@@ -837,7 +879,7 @@ int pascal CheckWorldCollision(
 }
 
 
-/** Remove all effects and player shots */
+/** Remove all currently active effects and player shots */
 void ResetEffectsAndPlayerShots(void)
 {
   register word i;
@@ -903,9 +945,9 @@ void pascal Map_DestroySection(word left, word top, word right, word bottom)
 /** Draw a single solid tile at the given location */
 static void pascal DrawTileDebris(word tileValue, word x, word y)
 {
-  if (x > 0 && x < VIEWPORT_WIDTH && y > 0 && y < 21)
+  if (x > 0 && x < VIEWPORT_WIDTH && y > 0 && y < VIEWPORT_HEIGHT + 1)
   {
-    BlitSolidTile(tileValue, x + y * 320);
+    BlitSolidTile(tileValue, x + y * (40 * 8));
   }
 }
 
@@ -983,12 +1025,21 @@ bool pascal SpawnEffect(word id, word x, word y, word type, word spawnDelay)
   EffectState* state;
   word numFrames = AINFO_NUM_FRAMES(offset);
 
+  // Search for a free slot in the effect states list
   for (i = 0; i < MAX_NUM_EFFECTS; i++)
   {
     if (gmEffectStates[i].active == 0)
     {
+      // We found a slot, set it up
       state = gmEffectStates + i;
 
+      // If we're spawning a fire bomb fire, only do it if there's solid ground
+      // below. Return true to indicate that spawning failed.
+      //
+      // [NOTE] This feels like the wrong layer of abstraction to perform this
+      // check. There are only two places in the entire code base which rely
+      // on this behavior, and there's no reason why the check couldn't be done
+      // there instead.
       if (
         id == ACT_FIRE_BOMB_FIRE &&
         !CheckWorldCollision(MD_DOWN, ACT_FIRE_BOMB_FIRE, 0, x, y + 1))
@@ -1036,7 +1087,7 @@ void pascal SpawnDestructionEffects(word handle, int* spec, word actorId)
 }
 
 
-/** Spawn effect repeatedly over time
+/** Make effect spawn repeatedly over time
  *
  * This function doesn't directly spawn an effect. Instead, it creates a
  * "effect spawner" which will spawn multiple instances of the specified
@@ -1050,45 +1101,64 @@ void pascal SpawnDestructionEffects(word handle, int* spec, word actorId)
  */
 void pascal SpawnBurnEffect(word effectId, word sourceId, word x, word y)
 {
-  // TODO Document further
-
   register word offset;
   register word i;
   EffectState* state;
   word height;
   word width;
 
+  // The continually spawning effects should appear in an area corresponding
+  // to the source sprite's bounding box, so we apply the x/y offset here.
   offset = gfxActorInfoData[sourceId];
   x += AINFO_X_OFFSET(offset);
   y += AINFO_Y_OFFSET(offset);
 
+  // Search for an available slot
   for (i = 0; i < MAX_NUM_EFFECTS; i++)
   {
     if (gmEffectStates[i].active == 0)
     {
+      // We found a free slot, set it up
       state = gmEffectStates + i;
 
       state->active = 18;
       state->id = sourceId;
+
+      // The EffectState struct fields are repurposed with different meanings
+      // for the EM_BURN_FX type. See UpdateAndDrawEffects().
       state->framesToLive = effectId;
 
+      // Get height & width of the effect sprite
       offset = gfxActorInfoData[effectId];
       height = AINFO_HEIGHT(offset);
       width = AINFO_WIDTH(offset);
 
+      // Set x and y so that an effect sprite spawned there will appear
+      // centered at that location
+      //
+      // [BUG] height and width are swapped here. The game only ever
+      // uses this function with sprites that are square in size, so
+      // it doesn't make any difference.
       state->x = x - height / 2;
       state->y = y + width / 2;
-      state->type = 99;
 
+      state->type = EM_BURN_FX;
+
+      // Store height and width of the _source_ sprite, so that we can define
+      // the spawn area
       offset = gfxActorInfoData[sourceId];
       height = AINFO_HEIGHT(offset);
       width = AINFO_WIDTH(offset);
-
       state->unk1 = height;
       state->spawnDelay = width;
+
+      // All state set up, UpdateAndDrawEffects() can now process this effect
       return;
     }
   }
+
+  // If we get here, then all slots are already occupied, and we fail
+  // silently.
 }
 
 
@@ -1147,13 +1217,16 @@ void UpdateAndDrawEffects(void)
     {
       if (state->active % 2)
       {
+        // See SpawnBurnEffect(). spawnDelay is source sprite width, unk1 is
+        // source sprite height.
+        // So this spawns an effect somewhere within the source sprite's
+        // bounding box, randomly placed.
         SpawnEffect(
-          state->framesToLive,
+          state->framesToLive, // ID to spawn
           state->x + (int)RandomNumber() % state->spawnDelay,
           state->y - (int)RandomNumber() % state->unk1,
           EM_RISE_UP,
           0);
-
       }
 
       state->active--;
