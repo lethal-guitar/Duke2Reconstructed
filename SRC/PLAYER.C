@@ -384,14 +384,14 @@ void UpdatePlayer(void)
 
     if (retConveyorBeltCheckResult)
     {
-      if (retConveyorBeltCheckResult == 1)
+      if (retConveyorBeltCheckResult == CB_LEFT)
       {
         if (!CheckWorldCollision(MD_LEFT, plActorId, 0, plPosX - 1, plPosY))
         {
           plPosX--;
         }
       }
-      else if (retConveyorBeltCheckResult == 2)
+      else if (retConveyorBeltCheckResult == CB_RIGHT)
       {
         if (!CheckWorldCollision(MD_RIGHT, plActorId, 0, plPosX + 1, plPosY))
         {
@@ -469,7 +469,8 @@ void UpdatePlayer(void)
           ++plPosY;
 
           if (CheckWorldCollision(
-            MD_DOWN, plActorId, plAnimationFrame, plPosX, plPosY + 1) == 1)
+            MD_DOWN, plActorId, plAnimationFrame, plPosX, plPosY + 1) ==
+            CR_COLLISION)
           {
             plAnimationFrame = 32;
           }
@@ -478,7 +479,8 @@ void UpdatePlayer(void)
             ++plPosY;
 
             if (CheckWorldCollision(
-              MD_DOWN, plActorId, plAnimationFrame, plPosX, plPosY + 1) == 1)
+              MD_DOWN, plActorId, plAnimationFrame, plPosX, plPosY + 1) ==
+              CR_COLLISION)
             {
               plAnimationFrame = 32;
             }
@@ -505,7 +507,7 @@ void UpdatePlayer(void)
       if (
         plState != PS_CLIMBING_LADDER &&
         inputMoveUp &&
-        CheckWorldCollision(MD_UP, plActorId, 36, plPosX, plPosY) == 3 &&
+        CheckWorldCollision(MD_UP, plActorId, 36, plPosX, plPosY) == CR_LADDER &&
         (plState != PS_JUMPING || plJumpStep >= 4))
       {
         plState = PS_CLIMBING_LADDER;
@@ -786,7 +788,7 @@ void UpdatePlayer(void)
           {
             byte collisionCheck = CheckWorldCollision(
               MD_UP, ACT_DUKE_L, 37, plPosX, plPosY - 1);
-            if (collisionCheck != 1)
+            if (collisionCheck != CR_COLLISION)
             {
               plPosY--;
             }
@@ -814,7 +816,8 @@ updateNormal:
 
           if (
             inputJump && !plBlockJumping &&
-            CheckWorldCollision(MD_UP, plActorId, 0, plPosX, plPosY - 1) != 1)
+            CheckWorldCollision(MD_UP, plActorId, 0, plPosX, plPosY - 1) !=
+            CR_COLLISION)
           {
             plBlockJumping = true;
             PlaySound(SND_DUKE_JUMPING);
@@ -827,7 +830,7 @@ updateNormal:
           collisionCheck = CheckWorldCollision(
             MD_DOWN, plActorId, 0, plPosX, plPosY + 1);
 
-          if (!collisionCheck || collisionCheck == 3)
+          if (!collisionCheck || collisionCheck == CR_LADDER)
           {
             plState = PS_FALLING;
             plFallingSpeed = 0;
@@ -867,7 +870,7 @@ updateHanging:
           word collCheck;
 
           if (CheckWorldCollision(
-            MD_UP, plActorId, 0, plPosX, plPosY) == 2)
+            MD_UP, plActorId, 0, plPosX, plPosY) == CR_CLIMBABLE)
           {
             plPosY++;
           }
@@ -893,7 +896,7 @@ updateHanging:
             goto updateJumping;
           }
 
-          if (inputMoveDown && inputJump || collCheck != 2)
+          if (inputMoveDown && inputJump || collCheck != CR_CLIMBABLE)
           {
             plBlockJumping = true;
             plState = PS_FALLING;
@@ -938,7 +941,7 @@ updateHanging:
           byte collisionCheck = CheckWorldCollision(
             MD_UP, plActorId, 0, plPosX, plPosY - 1);
 
-          if (collisionCheck != 1)
+          if (collisionCheck != CR_COLLISION)
           {
             plPosY--;
           }
@@ -946,7 +949,7 @@ updateHanging:
           collisionCheck = CheckWorldCollision(
             MD_UP, plActorId, 0, plPosX, plPosY - 1);
 
-          if (collisionCheck != 1)
+          if (collisionCheck != CR_COLLISION)
           {
             plPosY--;
           }
