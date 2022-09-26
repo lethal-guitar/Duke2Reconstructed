@@ -250,7 +250,7 @@ typedef struct {
   ibool remainActive:1;
 
   // Affects ApplyWorldCollision() in game3.c. When true, the actor can move
-  // past 1 tile high walls (i.e., stairs), but can't move off a ledge.
+  // past 1 tile high walls (i.e., stairs) and can move off ledges.
   ibool allowStairStepping:1;
 
   // Actor is affected by gravity and conveyor belts

@@ -165,6 +165,8 @@ void LoadGroupFileDict(void)
 
   if (fd != -1)
   {
+    // [UNSAFE] fsGroupFileDict has a fixed size. There's no checking here that
+    // the file actually fits within the available space.
     _read(fd, fsGroupFileDict, sizeof(fsGroupFileDict));
     CloseFile(fd);
   }

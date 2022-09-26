@@ -155,14 +155,34 @@ void pascal LoadLevelHeader(char far* filename)
   LoadAssetFilePart(filename, 0, &headerSize, sizeof(word));
 
   // Load the header data, this includes the list of actors to spawn into the
-  // level
+  // level.
+  //
+  // [UNSAFE] No checking that headerSize is less than or equal to the size of
+  // levelHeaderData, which is fixed at compile time.
   LoadAssetFilePart(filename, sizeof(word), levelHeaderData, headerSize);
 
   // The last word of the header data is the width of the map
   mapWidth = READ_LVL_HEADER_WORD(headerSize - 2);
 
-  // The first word after the fixed-size header (which we parse below) specifies
-  // how many actors are in this level.
+  // The header data is laid out as follows:
+  //
+  // | offset | what               | type                   |
+  // | ------ | ------------------ | ---------------------- |
+  // |      0 | tileset filename   | string                 |
+  // |     13 | backdrop filename  | string                 |
+  // |     26 | music filename     | string                 |
+  // |     39 | flags              | byte (bitmask)         |
+  // |     40 | alt. backdrop num  | byte                   |
+  // |     41 | unused             | byte                   |
+  // |     42 | unused             | byte                   |
+  // |     43 | # actor desc words | word                   |
+  // |     45 | actor list start   | word[]                 |
+  // |  N - 2 | map width          | word                   |
+  //
+  // With N referring to `headerSize`.
+
+  // The actor descriptions themselves are handled in SpawnLevelActors() and
+  // LoadSpritesForLevel().
   levelActorListSize = READ_LVL_HEADER_WORD(43);
 
   // Interpret the remaining header data, this defines which type of parallax
@@ -322,7 +342,7 @@ void pascal LoadMapData(char far* filename)
  *
  * Notably, the logic here is not the same as in UpdatePlayer(). Often, the
  * actual camera position at the start of the level will be a bit different due
- * to the player update logic being invoked before fading in the game.
+ * to the player update logic being invoked once before fading in the game.
  */
 void CenterViewOnPlayer(void)
 {
@@ -373,7 +393,7 @@ void SpawnLevelActors(void)
   // Any actors that are spawned during gameplay will be placed at wherever a
   // free slot in the actor list can be found, so their draw order is basically
   // random (it's still deterministic but depends on what has happened so far
-  // during gameplay, so in practice, it's very much random).
+  // during gameplay, so in practice, it very much appears to be random).
   for (currentDrawIndex = -1; currentDrawIndex < 4; currentDrawIndex++)
   {
     // levelActorListSize is the number of words, hence we multiply by 2.  Each

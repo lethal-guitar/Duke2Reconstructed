@@ -82,7 +82,7 @@ void LoadSoundEffects(void)
   // Load 'basic' sound effects from the AUDIOHED/AUDIOT files (Id Software
   // audio package format). This includes AdLib and PC speaker versions of all
   // sound effects (except for the intro sounds).
-
+  //
   // [NOTE] It's not clear why these GetAssetFileSize() calls are here, since
   // the result is never used. The buffer sizes are hardcoded.
   // It would actually be more robust to allocate memory based on file size for
@@ -91,6 +91,9 @@ void LoadSoundEffects(void)
   // implemented completely?  Alternatively, maybe a more flexible scheme was
   // used during development but not included in the shipping game, and these
   // calls are remnants of that?
+  //
+  // [UNSAFE] Both sndPackageHeader and sndAudioData have fixed sizes. There's
+  // no checking that the files actually fit into the available space.
   size = GetAssetFileSize("AUDIOHED.MNI");
   LoadAssetFile("AUDIOHED.MNI", sndPackageHeader);
 
@@ -100,7 +103,7 @@ void LoadSoundEffects(void)
   // Load digitized sound effects (.VOC files). Some sounds have no digitized
   // version. The intro sounds are not loaded here, they are only loaded when
   // needed (i.e., when the intro video is about to be played).
-
+  //
   // [NOTE] Which sounds have digitized versions is hardcoded into the game. It
   // would also have been possible to simply try loading .VOC files for all
   // sound effects, and ignoring those where no file is found. That would have
