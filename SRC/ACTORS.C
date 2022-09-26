@@ -1943,12 +1943,12 @@ word FindActorDesc(
 
   for (i = startIndex; i < levelActorListSize * 2; i += 6)
   {
-    word id = READ_LVL_HEADER_WORD(45 + i);
+    word id = READ_LVL_ACTOR_DESC_ID(i);
 
     if (id == neededId)
     {
-      x = READ_LVL_HEADER_WORD(47 + i);
-      y = READ_LVL_HEADER_WORD(49 + i);
+      x = READ_LVL_ACTOR_DESC_X(i);
+      y = READ_LVL_ACTOR_DESC_Y(i);
 
       if (neededX == 0x8000)
       {
@@ -2043,11 +2043,11 @@ void pascal Act_MovingMapPartTrigger(word handle)
 
   descIndex = FindActorDesc(
     descIndex, ACT_META_DYNGEO_MARKER_1, 0x8000, state->y, handle);
-  right = mapPart->right = READ_LVL_HEADER_WORD(47 + descIndex);
+  right = mapPart->right = READ_LVL_ACTOR_DESC_X(descIndex);
 
   descIndex = FindActorDesc(
     descIndex, ACT_META_DYNGEO_MARKER_2, right, 0x8000, handle);
-  mapPart->bottom = READ_LVL_HEADER_WORD(49 + descIndex);
+  mapPart->bottom = READ_LVL_ACTOR_DESC_Y(descIndex);
 
   if (state->var2)
   {

@@ -266,7 +266,7 @@ void LoadSpritesForLevel(void)
   // iteration.
   for (i = 0; i < levelActorListSize * 2; i += 6)
   {
-    actorId = READ_LVL_HEADER_WORD(45 + i);
+    actorId = READ_LVL_ACTOR_DESC_ID(i);
 
     // Skip actors that don't appear in the currently chosen difficulty
     if (CheckDifficultyMarker(actorId))
@@ -381,7 +381,7 @@ void SpawnLevelActors(void)
     // iteration.
     for (i = 0; i < levelActorListSize * 2; i += 6)
     {
-      actorId = READ_LVL_HEADER_WORD(45 + i);
+      actorId = READ_LVL_ACTOR_DESC_ID(i);
 
       // Skip actors that don't appear in the currently chosen difficulty
       if (CheckDifficultyMarker(actorId))
@@ -396,8 +396,8 @@ void SpawnLevelActors(void)
 
       if (drawIndex == currentDrawIndex)
       {
-        x = READ_LVL_HEADER_WORD(47 + i);
-        y = READ_LVL_HEADER_WORD(49 + i);
+        x = READ_LVL_ACTOR_DESC_X(i);
+        y = READ_LVL_ACTOR_DESC_Y(i);
 
         if (SpawnActorInSlot(gmNumActors, actorId, x, y))
         {
