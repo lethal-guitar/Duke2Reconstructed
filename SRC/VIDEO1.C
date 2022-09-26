@@ -153,11 +153,11 @@ void OnNewVideoFrame(word videoType, int frame)
   if (flicNextDelay < 0)
   {
     // A negative value denotes a delay in seconds ...
-    flicFrameDelay = DN2_abs(flicNextDelay * 280);
+    flicFrameDelay = DN2_abs(flicNextDelay * TIMER_FREQUENCY);
   }
   else
   {
     // ... a positive one is fractions of a second (1/x seconds)
-    flicFrameDelay = 280 / flicNextDelay;
+    flicFrameDelay = TIMER_FREQUENCY / flicNextDelay;
   }
 }

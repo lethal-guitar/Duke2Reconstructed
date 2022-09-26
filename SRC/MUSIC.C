@@ -42,7 +42,7 @@ Cosmo, which in turn is similar to Id Software code from Catacomb 3D.
 // [NOTE] This being a variable and not a define is probably a relic of the
 // Cosmo codebase, which uses different timer frequencies depending on if music
 // is enabled or not.
-static word sysTimerFrequency = 280;
+static word sysTimerFrequency = TIMER_FREQUENCY;
 
 
 /** Set specified AdLib hardware register to the given value

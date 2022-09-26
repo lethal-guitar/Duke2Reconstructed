@@ -38,6 +38,8 @@
 #define VIEWPORT_WIDTH           32
 #define VIEWPORT_HEIGHT          20
 
+#define TIMER_FREQUENCY         280
+
 #define CLOAK_TIME              700
 #define RAPID_FIRE_TIME         700
 #define MAX_AMMO                 32
