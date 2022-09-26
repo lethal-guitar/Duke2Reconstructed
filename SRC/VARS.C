@@ -51,7 +51,7 @@ word uiProgressBarStepDelay;
 
 byte demoData[134];
 
-byte lastConveyorBeltCheckResult;
+byte retConveyorBeltCheckResult;
 
 bool hudShowingHintMachineMsg;
 
@@ -71,7 +71,7 @@ int plCollectedLetters;
 word gmTeleportTargetPosX;
 word gmTeleportTargetPosY;
 
-byte collidingPlayerShotDirection;
+byte retPlayerShotDirection;
 
 bool gmPlayerTookDamage;
 
@@ -121,7 +121,7 @@ byte far* gfxMaskedTileData;
 
 bool plRapidFireIsActiveFrame;
 
-bool gmDoorUnlockSuccess;
+bool gmRequestUnlockNextDoor;
 
 bool demoIsRecording;
 
@@ -208,7 +208,7 @@ bool plKilledInShip;
 
 word gmPlayerEatingActor;
 
-bool gmForceFieldUnlocked;
+bool gmRequestUnlockNextForceField;
 bool plInteractAnimTicks;
 bool plBlockLookingUp;
 

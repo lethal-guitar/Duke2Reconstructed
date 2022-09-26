@@ -1989,7 +1989,7 @@ void pascal Act_MovingMapPartTrigger(word handle)
 
   state->drawStyle = DS_INVISIBLE;
 
-  if (gmDoorUnlockSuccess)
+  if (gmRequestUnlockNextDoor)
   {
     state->y += 5;
 
@@ -2006,9 +2006,9 @@ void pascal Act_MovingMapPartTrigger(word handle)
 
   if (state->var2 == 2)
   {
-    if (gmDoorUnlockSuccess)
+    if (gmRequestUnlockNextDoor)
     {
-      gmDoorUnlockSuccess = false;
+      gmRequestUnlockNextDoor = false;
     }
     else
     {
@@ -2326,9 +2326,9 @@ void pascal Act_ForceField(word handle)
   if (state->var2) { return; } // If turned off, we're done here
 
   // Handle unlocking
-  if (gmForceFieldUnlocked)
+  if (gmRequestUnlockNextForceField)
   {
-    gmForceFieldUnlocked = false;
+    gmRequestUnlockNextForceField = false;
     state->var2 = true;
     return;
   }

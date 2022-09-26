@@ -96,7 +96,7 @@ void pascal InitActorState(
  * UpdateAndDrawPlayerShots().
  *
  * In addition to the return value, a second value is returned via the global
- * variable collidingPlayerShotDirection, which indicates which direction the
+ * variable retPlayerShotDirection, which indicates which direction the
  * player shot was moving into (for horizontal shots only).
  *
  * Since the collision detection works by going through the list of actors
@@ -150,7 +150,7 @@ byte pascal TestShotCollision(word handle)
       actor->id, actor->frame, actor->x, actor->y,
       shot->sprite, shot->frame - 1, shot->x, shot->y))
     {
-      collidingPlayerShotDirection = shot->direction;
+      retPlayerShotDirection = shot->direction;
 
       switch (shot->sprite)
       {
@@ -417,7 +417,7 @@ void pascal UpdateActorPlayerCollision(word handle)
       case ACT_CIRCUIT_CARD_KEYHOLE:
         if (plPosY - 2 == state->y)
         {
-          TryUnlockingDoor(&gmForceFieldUnlocked, ACT_CIRCUIT_CARD, handle);
+          TryUnlockingDoor(&gmRequestUnlockNextForceField, ACT_CIRCUIT_CARD, handle);
           ShowTutorial(
             TUT_FOUND_FORCE_FIELD,
             "USE THE ACCESS CARD TO DISABLE*THIS FORCE FIELD.");
@@ -429,7 +429,7 @@ void pascal UpdateActorPlayerCollision(word handle)
               ShowTutorial(TUT_CARD_NEEDED, "ACCESS DENIED.");
               plBlockLookingUp = false;
             }
-            else if (gmForceFieldUnlocked)
+            else if (gmRequestUnlockNextForceField)
             {
               gmTutorialsShown[TUT_CARD_NEEDED] = true;
               ShowInGameMessage("ACCESS GRANTED.");
@@ -442,7 +442,7 @@ void pascal UpdateActorPlayerCollision(word handle)
         if (plPosY - 2 == state->y)
         {
           ShowTutorial(TUT_FOUND_KEYHOLE, "USE A KEY TO OPEN THIS DOOR.");
-          TryUnlockingDoor(&gmDoorUnlockSuccess, ACT_BLUE_KEY, handle);
+          TryUnlockingDoor(&gmRequestUnlockNextDoor, ACT_BLUE_KEY, handle);
 
           if (inputMoveUp || kbKeyState[SCANCODE_ENTER])
           {
@@ -451,7 +451,7 @@ void pascal UpdateActorPlayerCollision(word handle)
               ShowTutorial(TUT_KEY_NEEDED, "YOU NEED A KEY TO OPEN*THE DOOR.");
               plBlockLookingUp = false;
             }
-            else if (gmDoorUnlockSuccess)
+            else if (gmRequestUnlockNextDoor)
             {
               ShowInGameMessage("OPENING DOOR.");
               gmTutorialsShown[TUT_KEY_NEEDED] = true;
@@ -1443,7 +1443,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
           //
           // I'm not sure why the code here doesn't check state->id instead of
           // var3.
-          if (collidingPlayerShotDirection == SD_LEFT)
+          if (retPlayerShotDirection == SD_LEFT)
           {
             state->var1 = 1;
           }
@@ -1679,7 +1679,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
 
         PlaySound(SND_BIOLOGICAL_ENEMY_DESTROYED);
 
-        switch (collidingPlayerShotDirection)
+        switch (retPlayerShotDirection)
         {
           case SD_LEFT:
             SpawnEffect(
@@ -1717,7 +1717,7 @@ void pascal HandleActorShotCollision(int damage, word handle)
         // The variable is set in HUD_DrawWeapon().
         if (plWeapon_hud != WPN_REGULAR || plState == PS_USING_SHIP)
         {
-          switch (collidingPlayerShotDirection)
+          switch (retPlayerShotDirection)
           {
             case SD_LEFT:
               SpawnEffect(
@@ -1761,11 +1761,11 @@ void pascal HandleActorShotCollision(int damage, word handle)
 
     case ACT_BOUNCING_SPIKE_BALL:
       // Make it fly left/right when hit on either side. See Act_SpikeBall.
-      if (collidingPlayerShotDirection == SD_LEFT)
+      if (retPlayerShotDirection == SD_LEFT)
       {
         state->var1 = 1;
       }
-      else if (collidingPlayerShotDirection == SD_RIGHT)
+      else if (retPlayerShotDirection == SD_RIGHT)
       {
         state->var1 = 2;
       }
@@ -2643,12 +2643,12 @@ void UpdateAndDrawActors(void)
         actor->gravityState = 0;
 
         // Conveyor belt movement
-        if (lastConveyorBeltCheckResult == 1 && !CheckWorldCollision(
+        if (retConveyorBeltCheckResult == 1 && !CheckWorldCollision(
           MD_LEFT, actor->id, actor->frame, actor->x - 1, actor->y))
         {
           actor->x--;
         }
-        else if (lastConveyorBeltCheckResult == 2 && !CheckWorldCollision(
+        else if (retConveyorBeltCheckResult == 2 && !CheckWorldCollision(
           MD_RIGHT, actor->id, actor->frame, actor->x + 1, actor->y))
         {
           actor->x++;

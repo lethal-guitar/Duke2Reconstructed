@@ -382,16 +382,16 @@ void UpdatePlayer(void)
     ////////////////////////////////////////////////////////////////////////////
     CheckWorldCollision(MD_DOWN, plActorId, 0, plPosX, plPosY + 1);
 
-    if (lastConveyorBeltCheckResult)
+    if (retConveyorBeltCheckResult)
     {
-      if (lastConveyorBeltCheckResult == 1)
+      if (retConveyorBeltCheckResult == 1)
       {
         if (!CheckWorldCollision(MD_LEFT, plActorId, 0, plPosX - 1, plPosY))
         {
           plPosX--;
         }
       }
-      else if (lastConveyorBeltCheckResult == 2)
+      else if (retConveyorBeltCheckResult == 2)
       {
         if (!CheckWorldCollision(MD_RIGHT, plActorId, 0, plPosX + 1, plPosY))
         {
@@ -1241,7 +1241,7 @@ updateClimbingLadder:
 updateShooting:
     if (inputFire)
     {
-      if (!lastConveyorBeltCheckResult)
+      if (!retConveyorBeltCheckResult)
       {
         vertScrollCooldown = 5;
       }
@@ -1352,7 +1352,7 @@ updateShooting:
     plState == PS_USING_JETPACK ||
     plState == PS_BLOWN_BY_FAN ||
     plState == PS_RIDING_ELEVATOR ||
-    (lastConveyorBeltCheckResult && !inputMoveUp && !inputMoveDown))
+    (retConveyorBeltCheckResult && !inputMoveUp && !inputMoveDown))
   {
     if (gmCameraPosY > 0 && plPosY - gmCameraPosY < 11)
     {

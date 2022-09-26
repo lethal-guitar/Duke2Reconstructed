@@ -558,7 +558,7 @@ void pascal UpdateAndDrawGame(void (*updatePlayerFunc)())
  * at the given location, not whether it's up against a wall.
  *
  * But wait, there's more! When checking for collision downwards, the
- * function also sets the global variable lastConveyorBeltCheckResult to
+ * function also sets the global variable retConveyorBeltCheckResult to
  * indicate if the actor/sprite is currently on top of tiles with the
  * conveyor belt flag set, and which direction the conveyor belt is moving.
  *
@@ -584,7 +584,7 @@ int pascal CheckWorldCollision(
   int bboxTop;
   word attributes;
 
-  lastConveyorBeltCheckResult = CB_NONE;
+  retConveyorBeltCheckResult = CB_NONE;
 
   offset = gfxActorInfoData[actorId] + (frame << 3);
   height = AINFO_HEIGHT(offset);
@@ -715,7 +715,7 @@ int pascal CheckWorldCollision(
       {
         if (HAS_TILE_ATTRIBUTE(*(tileData + i), TA_CONVEYOR_L))
         {
-          lastConveyorBeltCheckResult = CB_LEFT;
+          retConveyorBeltCheckResult = CB_LEFT;
         }
 
         if (
@@ -723,7 +723,7 @@ int pascal CheckWorldCollision(
           (HAS_TILE_ATTRIBUTE(*(tileData + width - 1), TA_CONVEYOR_R) ||
           !HAS_TILE_ATTRIBUTE(*(tileData + width - 1), TA_SOLID_TOP)))
         {
-          lastConveyorBeltCheckResult = CB_RIGHT;
+          retConveyorBeltCheckResult = CB_RIGHT;
         }
 
         if (HAS_TILE_ATTRIBUTE(*(tileData + i), TA_SOLID_TOP))

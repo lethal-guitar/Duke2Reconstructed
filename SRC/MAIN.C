@@ -560,9 +560,9 @@ static void ResetGameState(void)
       gmMovingMapParts[i].type = 0;
     }
 
-    gmDoorUnlockSuccess = false;
+    gmRequestUnlockNextDoor = false;
     plAirlockDeathStep = 0;
-    gmForceFieldUnlocked = false;
+    gmRequestUnlockNextForceField = false;
     gmWaterAreasPresent = false;
     gmRadarDishesLeft = 0;
     plCollectedLetters = 0;
