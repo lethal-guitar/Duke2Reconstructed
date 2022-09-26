@@ -38,6 +38,11 @@
 #define DIFFICULTY_MEDIUM 2
 #define DIFFICULTY_HARD   3
 
+#define WPN_DAMAGE_REGULAR           1
+#define WPN_DAMAGE_LASER             2
+#define WPN_DAMAGE_ROCKET_LAUNCHER   8
+#define WPN_DAMAGE_FLAME_THROWER     2
+#define WPN_DAMAGE_SHIP_LASER        5
 
 typedef enum {
   TUT_RAPID_FIRE,

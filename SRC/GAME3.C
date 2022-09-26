@@ -153,18 +153,18 @@ byte pascal TestShotCollision(word handle)
         case ACT_REGULAR_SHOT_HORIZONTAL:
         case ACT_REGULAR_SHOT_VERTICAL:
           shot->frame = shot->frame | 0x8000; // deactivate shot
-          return 1;
+          return WPN_DAMAGE_REGULAR;
 
         case ACT_DUKE_LASER_SHOT_HORIZONTAL:
         case ACT_DUKE_LASER_SHOT_VERTICAL:
-          return 2;
+          return WPN_DAMAGE_LASER;
 
         case ACT_DUKE_FLAME_SHOT_UP:
         case ACT_DUKE_FLAME_SHOT_DOWN:
         case ACT_DUKE_FLAME_SHOT_LEFT:
         case ACT_DUKE_FLAME_SHOT_RIGHT:
           shot->frame = shot->frame | 0x8000; // deactivate shot
-          return 2;
+          return WPN_DAMAGE_FLAME_THROWER;
 
         case ACT_DUKE_ROCKET_UP:
         case ACT_DUKE_ROCKET_DOWN:
@@ -173,14 +173,14 @@ byte pascal TestShotCollision(word handle)
           shot->frame = shot->frame | 0x8000; // deactivate shot
           SpawnEffect(
             ACT_EXPLOSION_FX_2, shot->x - 3, shot->y + 3, EM_NONE, 0);
-          return 8;
+          return WPN_DAMAGE_ROCKET_LAUNCHER;
 
         case ACT_REACTOR_FIRE_L:
         case ACT_REACTOR_FIRE_R:
         case ACT_DUKES_SHIP_LASER_SHOT:
           SpawnEffect(
             ACT_EXPLOSION_FX_2, shot->x - 3, shot->y + 3, EM_NONE, 0);
-          return 5;
+          return WPN_DAMAGE_SHIP_LASER;
       }
     }
   }
