@@ -621,8 +621,7 @@ static void StartLevel(void)
   uiProgressBarStepDelay = 0;
 
   SpawnLevelActors();
-  FillScreenRegion(
-    SFC_BLACK, 0, 0, SCREEN_WIDTH_TILES - 1, SCREEN_HEIGHT_TILES - 1);
+  CLEAR_SCREEN();
   HUD_RedrawAll();
 
   // [NOTE] This is never set to anything other than VIEWPORT_HEIGHT, so it's
@@ -1332,7 +1331,7 @@ void ShowEpisodeEndScreen(void)
   // This call is a no-op for the first three episodes
   ShowDuke3dTeaserScreen();
 
-  FillScreenRegion(SFC_BLACK, 0, 0, 39, 24);
+  CLEAR_SCREEN();
 
   ShowBonusScreen();
 
@@ -1395,7 +1394,7 @@ restart:
       case 7:
         FadeOutScreen();
         SetDrawPage(0);
-        FillScreenRegion(SFC_BLACK, 0, 0, 39, 24);
+        CLEAR_SCREEN();
 
         menuSelection = ShowScriptedUI("Game_Speed", "OPTIONS.MNI");
 
@@ -1536,7 +1535,7 @@ void ShowDuke3dTeaserScreen(void)
   FadeOutScreen();
   SetDrawPage(0);
   SetDisplayPage(0);
-  FillScreenRegion(SFC_BLACK, 0, 0, 39, 24);
+  CLEAR_SCREEN();
 
   LoadSprite(ACT_DUKE_3D_TEASER_TEXT);
 
@@ -1565,7 +1564,7 @@ void ShowDuke3dTeaserScreen(void)
     // to match the original assembly
   }
 
-  FillScreenRegion(SFC_BLACK, 0, 0, 39, 24);
+  CLEAR_SCREEN();
 }
 
 

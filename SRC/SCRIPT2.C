@@ -246,7 +246,7 @@ word pascal InterpretScript(char far* text)
 
       SetDrawPage(0);
       LoadAssetFile(text, gfxCurrentPalette);
-      FillScreenRegion(SFC_BLACK, 0, 0, 39, 24);
+      CLEAR_SCREEN();
 
       UnterminateStr(text, originalStringEnd);
     }

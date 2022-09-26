@@ -74,6 +74,10 @@ typedef enum {
 #define ANY_KEY_PRESSED() !(kbLastScancode & 0x80)
 #define LAST_SCANCODE() (kbLastScancode & 0x7F)
 
+#define CLEAR_SCREEN() \
+  FillScreenRegion( \
+    SFC_BLACK, 0, 0, SCREEN_WIDTH_TILES - 1, SCREEN_HEIGHT_TILES - 1);
+
 
 typedef char SaveSlotName[SAVE_SLOT_NAME_MAX_LEN + 1];
 

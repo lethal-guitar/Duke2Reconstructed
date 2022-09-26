@@ -205,23 +205,37 @@ static void FadeOutFromPalette(byte* palette)
     // bars during gameplay. I have no clue why.
 
     SetDrawPage(gfxCurrentDisplayPage);
-    FillScreenRegion(SFC_BLACK, 0, 0, 39, 0);   // top row
-    FillScreenRegion(SFC_BLACK, 0, 1, 0, 24);   // left-most column
-    FillScreenRegion(SFC_BLACK, 39, 1, 39, 24); // right-most column
+
+    // Top row
+    FillScreenRegion(SFC_BLACK, 0, 0, SCREEN_WIDTH_TILES - 1, 0);
+
+    // Left-most column
+    FillScreenRegion(SFC_BLACK, 0, 1, 0, SCREEN_HEIGHT_TILES - 1);
+
+    // Right-most column
+    FillScreenRegion(
+      SFC_BLACK,
+      SCREEN_WIDTH_TILES - 1, 1,
+      SCREEN_WIDTH_TILES - 1, SCREEN_HEIGHT_TILES - 1);
 
     SetDrawPage(!gfxCurrentDisplayPage);
-    FillScreenRegion(SFC_BLACK, 0, 0, 39, 0);
-    FillScreenRegion(SFC_BLACK, 0, 1, 0, 24);
-    FillScreenRegion(SFC_BLACK, 39, 1, 39, 24);
+
+    // Same as above
+    FillScreenRegion(SFC_BLACK, 0, 0, SCREEN_WIDTH_TILES - 1, 0);
+    FillScreenRegion(SFC_BLACK, 0, 1, 0, SCREEN_HEIGHT_TILES - 1);
+    FillScreenRegion(
+      SFC_BLACK,
+      SCREEN_WIDTH_TILES - 1, 1,
+      SCREEN_WIDTH_TILES - 1, SCREEN_HEIGHT_TILES - 1);
   }
   else // demo episode
   {
     // Clear the whole screen.
     SetDrawPage(1);
-    FillScreenRegion(SFC_BLACK, 0, 0, 39, 24);
+    CLEAR_SCREEN();
 
     SetDrawPage(0);
-    FillScreenRegion(SFC_BLACK, 0, 0, 39, 24);
+    CLEAR_SCREEN();
   }
 
   // Clear any in-progress HUD message

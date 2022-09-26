@@ -92,10 +92,10 @@ void pascal ShowInGameMessage(char* message)
   hudMessageDelay = 0;
 
   SetDrawPage(gfxCurrentDisplayPage);
-  FillScreenRegion(SFC_BLACK, 0, 0, 39, 0);
+  FillScreenRegion(SFC_BLACK, 0, 0, SCREEN_WIDTH_TILES - 1, 0);
 
   SetDrawPage(!gfxCurrentDisplayPage);
-  FillScreenRegion(SFC_BLACK, 0, 0, 39, 0);
+  FillScreenRegion(SFC_BLACK, 0, 0, SCREEN_WIDTH_TILES - 1, 0);
 }
 
 
