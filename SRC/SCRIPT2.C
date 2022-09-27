@@ -76,7 +76,7 @@ void DrawNewsReporterTalkAnim(void)
 }
 
 
-/** Called by the scripting system when a checkbox is toggled
+/** Toggle a checkbox, or query its state
   *
   * Checkboxes are implemented by the TOGGS script command.  Within the script
   * code, option ids are assigned to each checkbox. The option id determines
@@ -208,7 +208,8 @@ bool pascal QueryOrToggleOption(bool toggle, char optionId)
  * The script _must_ be terminated by a `//END` command, otherwise the function
  * will keep reading past the end of the script.
  *
- * For context, here are some examples from one of the game's script files:
+ * For context, here are some (shortened) examples from one of the game's
+ * script files:
  *
  *   No_Can_Order
  *
@@ -237,35 +238,7 @@ bool pascal QueryOrToggleOption(bool toggle, char optionId)
  *   //FADEIN
  *   //WAIT
  *
- *   //APAGE
- *   //FADEOUT
- *   //LOADRAW WEAPONS1.MNI
- *   //FADEIN
- *   //WAIT
- *
- *   //APAGE
- *   //FADEOUT
- *   //LOADRAW WEAPONS2.MNI
- *   //FADEIN
- *   //WAIT
- *
- *   //APAGE
- *   //FADEOUT
- *   //LOADRAW ITEMS.MNI
- *   //FADEIN
- *   //WAIT
- *
- *   //APAGE
- *   //FADEOUT
- *   //LOADRAW ITEMS2.MNI
- *   //FADEIN
- *   //WAIT
- *
- *   //APAGE
- *   //FADEOUT
- *   //LOADRAW prizes2.MNI
- *   //FADEIN
- *   //WAIT
+ *   ... part of the code omitted for brevity ...
  *
  *   //APAGE
  *   //FADEOUT
@@ -274,6 +247,8 @@ bool pascal QueryOrToggleOption(bool toggle, char optionId)
  *   //WAIT
  *   //PAGESEND
  *   //END
+ *
+ * Also see https://github.com/lethal-guitar/RigelEngine/wiki/DukeScript.
  */
 word pascal InterpretScript(char far* text)
 {
@@ -339,9 +314,9 @@ word pascal InterpretScript(char far* text)
     }
     else if (StringStartsWith("//SHIFTWIN", text))
     {
-      // Some of the script files have an argument following the command,
-      // but the shift value is hard-coded. Most likely, it used to be
-      // configurable at some point during development.
+      // Some of the script files have an argument following the command, but
+      // the shift value is hard-coded. Most likely, it used to be configurable
+      // at some point during development.
       uiMessageBoxShift = 3;
     }
     else if (StringStartsWith("//GETPAL", text))
@@ -424,6 +399,7 @@ word pascal InterpretScript(char far* text)
       SetUpParameterRead(&text, &originalStringEnd);
       CopyStringUppercased(text, paramBuffer);
 
+      // Enable the menu cursor, and/or set its position
       uiMenuCursorPos = atoi(paramBuffer);
 
       UnterminateStr(text, originalStringEnd);
@@ -456,27 +432,38 @@ word pascal InterpretScript(char far* text)
       // Read X position
       SetUpParameterRead(&text, &originalStringEnd);
       CopyStringUppercased(text, paramBuffer);
+
       checkboxesX = atoi(paramBuffer);
+
       UnterminateStr(text, originalStringEnd);
 
       // Read number of checkboxes
       SetUpParameterRead(&text, &originalStringEnd);
       CopyStringUppercased(text, paramBuffer);
+
       numCheckboxes = atoi(paramBuffer);
+
       UnterminateStr(text, originalStringEnd);
 
       // Read checkbox specifications
+      //
+      // [UNSAFE] No range checking - relies on the count specified in the
+      // script code to be correct.
       for (i = 0; i < numCheckboxes * 2; i += 2)
       {
         // Read checkbox Y position
         SetUpParameterRead(&text, &originalStringEnd);
         CopyStringUppercased(text, paramBuffer);
+
         checkboxData[i] = atoi(paramBuffer);
+
         UnterminateStr(text, originalStringEnd);
 
         // Read option ID char
         SetUpParameterRead(&text, &originalStringEnd);
+
         checkboxData[i + 1] = *text;
+
         UnterminateStr(text, originalStringEnd);
       }
 
@@ -501,7 +488,7 @@ word pascal InterpretScript(char far* text)
 
       msgBoxTextY = numericParams[0] + 1;
 
-      // Animate appearance of a message box frame of the specified size
+      // Animate sliding in of a message box frame of the specified size
       UnfoldMessageBoxFrame(
         numericParams[0], numericParams[1], numericParams[2]);
     }
@@ -512,8 +499,8 @@ word pascal InterpretScript(char far* text)
     }
     else if (StringStartsWith("//EXITTODEMO", text))
     {
-      // Enable the timer. The timer is implemented in AwaitInput(), which
-      // is used by the `WAIT` command.
+      // Enable the timer. The timer is implemented in AwaitInput(), which is
+      // used by the `WAIT` command.
       uiDemoTimeoutTime = 1;
     }
     else if (StringStartsWith("//SETCURRENTPAGE", text))
@@ -537,8 +524,8 @@ word pascal InterpretScript(char far* text)
     }
     else if (StringStartsWith("//CWTEXT", text))
     {
-      // For the text command, the rest of the line after the command itself
-      // is what we use
+      // For the CWTEXT command, the rest of the line after the command itself
+      // is what we use as the text to draw
       text += FindNextToken(text);
       originalStringEnd = TerminateStrAtEOL(text);
 
@@ -599,9 +586,9 @@ word pascal InterpretScript(char far* text)
         gmCurrentLevel == numericParams[1] - 1 &&
         gmCurrentEpisode == numericParams[0] - 1)
       {
-        // We need to uppercase the text, since ShowInGameMessage() uses a
-        // font which only has uppercase letters, and doesn't uppercase the
-        // text while printing.
+        // We need to uppercase the text, since ShowInGameMessage() uses a font
+        // which only has uppercase letters, and doesn't uppercase the text
+        // by itself while printing.
         //
         // [UNSAFE] No range checking, text might be longer than
         // uiHintMessageBuffer.
@@ -621,6 +608,7 @@ word pascal InterpretScript(char far* text)
 
       // [NOTE] I'm not sure if the `WAITCURSOREND` command is fully
       // implemented - it's not used in any of the game's script files.
+
       if (StringStartsWith("//WAITCURSOREND", text))
       {
         i = 1;
@@ -656,7 +644,7 @@ word pascal InterpretScript(char far* text)
         }
         else
         {
-          // 18 is SCREEN_WIDTH_TILES - 2, but using that here changes the
+          // 18 is SCREEN_WIDTH_TILES - 2, but using that here would change the
           // generated ASM code
           scancode = GetTextInput(
             numericParams[2] / 2 + 18 - uiMessageBoxShift,
@@ -721,6 +709,11 @@ word pascal InterpretScript(char far* text)
               // act like down arrow/right arrow. The WAIT command is typically
               // the last command on each page, so the next command right after
               // is the start of the next page.
+              //
+              // When already on the last page however, this will end script
+              // execution, since the next command after PAGESEND will usually
+              // be END. This is different from using the down or right arrow
+              // key, which will navigate back to the first page.
               goto nextCommand;
             }
 
@@ -746,8 +739,9 @@ word pascal InterpretScript(char far* text)
 
           case 0xDF: // timed out to demo
             // 8 entries is the maximum that fits on screen with the design of
-            // the menus. But this seems a little too brittle. A value like
-            // 0xFE or perhaps a dedicated flag variable would seem better.
+            // the menus, so we use 9 to indicate the timeout. But this seems a
+            // little too brittle. A value like 0xFE or perhaps a dedicated
+            // flag variable would seem better.
             scriptPageIndex = 9;
             return;
 
@@ -763,16 +757,18 @@ word pascal InterpretScript(char far* text)
 
             if (scriptPageIndex == 1) // at top of menu or 1st page?
             {
-              // Also increments scriptPageIndex for each 'APAGE' found,
-              // effectively setting the index to the last page
+              // Search for the end of the last page.
+              //
+              // This also increments scriptPageIndex for each 'APAGE' found,
+              // effectively setting the index to the last page along the way.
+              // See FindTokenForwards() in script1.c.
               text += FindTokenForwards("//PAGESEND", text);
 
-              // Navigate to beginning of page
+              // Navigate to beginning of last page
               text -= FindTokenBackwards("//APAGE", text);
             }
-            else
+            else // we can still go up
             {
-              // Navigate up
               scriptPageIndex--;
 
               // Find beginning of current page
@@ -814,7 +810,8 @@ word pascal InterpretScript(char far* text)
             // PAGESEND. But there could be whitespace preceding the next
             // command. The following code is an attempt to handle this, but
             // it's not correct and thus only works if there's no blank line
-            // between WAIT and PAGESEND.
+            // between WAIT and PAGESEND - which is the case for all script
+            // files coming with the game.
 
             // First, skip ahead to the next token. If there's a blank line
             // following the current token, this will set offsetToNextToken to
@@ -822,14 +819,14 @@ word pascal InterpretScript(char far* text)
             // to the beginning of the next token.
             offsetToNextToken += FindNextToken(text + offsetToNextToken);
 
-            // [BUG] Now wer attempt to skip over any blank lines, but this
+            // [BUG] Now we attempt to skip over any blank lines, but this
             // doesn't work.
             //
             // Line breaks are encoded as "\r\n" in DOS.
             // If `text + offsetToNextToken` points at the next token (i.e.
             // there was no blank line after the current token), then the
             // FindNextToken() call here will return the offset to the token
-            // after the next one, which will always be at least 3.
+            // after the next one, which will always be at least 4.
             // If it points at the start of a blank line, the call will return
             // 2.  This means that this loop will never run more than once.
             // Because of that, `offsetToNextToken - offset` after this loop is
@@ -891,7 +888,20 @@ word pascal InterpretScript(char far* text)
       scriptPageIndex = 1;
     }
 
+    // If none of the if statements matched, the current script string was
+    // either an unrecognized command, or a blank line. We simply go to the
+    // next command in that case.
+
 nextCommand:
+    // [PERF] If there's a blank line after the current command, this will put
+    // us at the start of that blank line. On the next loop iteration, we will
+    // then try to dispatch that blank line as a command, but we won't
+    // recognize it, so we continue on to the next token after that. This might
+    // again be a blank line, in which case this all keeps going until we
+    // arrive at the start of the next command.
+    //
+    // Again, a much simpler and also more efficient solution would be to
+    // advance `text` until we find a `/`.
     offset = FindNextToken(text);
 
     // [BUG] This condition is never true, FindNextToken doesn't ever return 0.
@@ -904,7 +914,7 @@ nextCommand:
     else
     {
       text += offset;
-      continue;
+      continue; // [NOTE] Redundant
     }
 
     return; // [NOTE] Unreachable
@@ -928,17 +938,33 @@ char far* FindScriptByName(char far* scriptName, char far* text)
   //      // skip to end of current line
   //     while (*text != '\n') text++;
   //
-  //     // skip to start of next line
+  //     // then skip to start of next line
   //     text++;
   //   }
   //
   // Instead, the code here navigates token by token, which means that it can
-  // take several function calls to skip a single line.
+  // take several string comparison function calls to skip a single line.
 
   for (;;)
   {
     if (StringStartsWith(scriptName, text))
     {
+      // We've found the script. Advance to the next token, so that the script
+      // interpreter will see the script's first command when we pass the return
+      // value of this function to InterpretScript() (see ShowScriptedUI() in
+      // main.c).
+      //
+      // [PERF] All the script files shipping with the game have a blank line
+      // between the script name and the first command, which means that this
+      // FindNextToken call advances to the start of the blank line, not the
+      // first command. The script interpreter then spends some time skipping
+      // to the actual first command. Instead of FindNextToken(), it would be
+      // better to simply advance `text` until we find a '/':
+      //
+      //   while (*text != '/') text++;
+      //
+      // This could've been abstracted with a function FindNextCommand,
+      // which could also have been used in InterpretScript().
       return text + FindNextToken(text);
     }
 
