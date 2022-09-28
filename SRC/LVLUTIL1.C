@@ -26,13 +26,29 @@
 
 /*******************************************************************************
 
-TODO: Document this file and all of the functions
+Level loading utilities, part 1
+
+Various functions needed for loading levels.
 
 *******************************************************************************/
 
 
+/** Set derived map size variables based on the width */
 void pascal SetMapSize(word width)
 {
+  // In Duke Nukem II, the map data is stored in a fixed-size buffer. Levels
+  // can have different widths, but since the total size is fixed, the height
+  // is derived from the width. The mapData buffer holds 32750 tile values in
+  // total, so the height can be derived by: 32750 / width.
+  //
+  // This is what this function does, but it also has an additional task.
+  // There are a few places in the code where values need to be multiplied by
+  // the width of the map. Since multiplication is quite expensive on the CPUs
+  // of the time, this is instead done via left-shifting, which is equivalent
+  // to multiplying with a power of 2. The code here thus determines the shift
+  // value needed to achieve the same result as if by multiplication.
+  // This could be done by computing log2(width), but instead, we simply use
+  // a lookup table of all possible width values, and then search for a match.
   const word MAP_WIDTHS[] = { 32, 64, 128, 256, 512, 1024 };
 
   word i;
@@ -40,14 +56,21 @@ void pascal SetMapSize(word width)
   {
     if (MAP_WIDTHS[i] == width)
     {
+      // Set mapWidthShift to log2(width). log2(32) is 5, and increments by one
+      // with each doubling of the width.
       mapWidthShift = i + 5;
-      mapBottom = 32768 / width - 2;
+
+      // Set mapBottom to `height - 1`. The map data buffer is actually 32750
+      // tiles long, but for some reason 32768 was used here. To compensate for
+      // the difference, subtract 1 again.
+      mapBottom = 32768 / width - 1 - 1;
       break;
     }
   }
 }
 
 
+/** Set variables based on a few level header bytes */
 void pascal ParseLevelFlags(
   byte flags, byte secondaryBackdrop, byte unused1, byte unused2)
 {

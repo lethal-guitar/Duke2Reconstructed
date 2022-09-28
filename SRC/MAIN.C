@@ -57,12 +57,12 @@ void PlayLoadingScreenMusic(void)
 
 /** Fill the backdrop offset lookup table
  *
- * bdOffsetTable is a 1-dimensional array storing a 2-dimensional lookup table of
- * 80x50 values. The values are simply counting up from 0 up to 8000 in steps of
- * 8, but after every 40 values, the last 40 values are repeated. The 2nd half of
- * the table is repeating the first half.  In other words, within a row, the
- * values at indices 0 to 39 are identical to the values at indices 40 to 79.
- * Within the whole table, rows 0 to 24 are identical to rows 25 to 49.
+ * bdOffsetTable is a 1-dimensional array storing a 2-dimensional lookup table
+ * of 80x50 values. The values are simply counting up from 0 up to 8000 in
+ * steps of 8, but after every 40 values, the last 40 values are repeated. The
+ * 2nd half of the table is repeating the first half.  In other words, within a
+ * row, the values at indices 0 to 39 are identical to the values at indices 40
+ * to 79.  Within the whole table, rows 0 to 24 are identical to rows 25 to 49.
  * The table is basically 4 copies of a 40x25 table arranged in a 4x4 grid.
  *
  * To make this a bit easier to imagine, let's say the table were only 8x6.
@@ -207,7 +207,7 @@ void DrawNewHighScoreEntryBackground(void)
  *
  * Tile set attributes define which tiles are solid, have animation, can be
  * climbed, etc.
- * LoadLevelHeader() must be called before.
+ * LoadLevelHeader() must be called before using this function.
  */
 void LoadTileSetAttributes(void)
 {
@@ -218,7 +218,7 @@ void LoadTileSetAttributes(void)
 
 /** Load solid (non-transparent) tiles for the current tile set
  *
- * LoadLevelHeader() must be called before.
+ * LoadLevelHeader() must be called before using this function.
  */
 void LoadUnmaskedTiles(void)
 {
@@ -233,7 +233,7 @@ void LoadUnmaskedTiles(void)
 
 /** Load masked (partially transparent) tiles for the current tile set
  *
- * LoadLevelHeader() must be called before.
+ * LoadLevelHeader() must be called before using this function.
  */
 void LoadMaskedTiles(void)
 {
@@ -244,7 +244,7 @@ void LoadMaskedTiles(void)
 
 /** Allocate memory for the current level's music data
  *
- * LoadLevelHeader() must be called before.
+ * LoadLevelHeader() must be called before using this function.
  */
 void AllocateInGameMusicBuffer(void)
 {
@@ -273,7 +273,7 @@ bool pascal CheckDifficultyMarker(word id)
 
 /** Load sprites required by the actors present in the current level
  *
- * LoadLevelHeader() must be called before.
+ * LoadLevelHeader() must be called before using this function.
  */
 void LoadSpritesForLevel(void)
 {

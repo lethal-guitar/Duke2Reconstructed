@@ -62,7 +62,39 @@ void UpdateBackdrop(void)
   /*
   How the parallax scrolling works
 
-  TODO
+  See the comment in LoadBackdrop() in lvlutil2.c. That function prepares
+  different copies of the backdrop image(s) to emulate scrolling by 4 or 2
+  pixels at a time. The backdrop is drawn as a grid of tiles in
+  UpdateAndDrawGame() - for each grid cell on screen, either part of the
+  backdrop is drawn, or a map tile. The backdrop image is laid out as a tileset,
+  and can only be drawn in 8x8-pixel blocks.
+  To scroll the backdrop in 8-pixel increments, the starting location within the
+  image is adjusted, with wraparound. This is achieved via bdOffsetTable:
+  See InitBackdropOffsetTable() in main.c.
+
+  To draw the backdrop scrolled by a certain number of 8-pixel steps, this
+  function here sets bdOffsetTablePtr to point to the right start offset within
+  the backdrop offset table. The drawing code in UpdateAndDrawGame() then uses
+  bdOffsetTablePtr to find the right tile within the backdrop image to draw
+  onto the screen. After each grid cell, it advances to the next entry in the
+  backdrop offset table. Since the table repeats after 40 entries, this causes
+  the backdrop image on screen to wrap around and repeat as well. After drawing
+  a full row of tiles, UpdateAndDrawGame() advances bdOffsetTablePtr by 80,
+  which skips to the next row within the backdrop offset table.
+
+  For scrolling in finer-grained steps, this function chooses the right backdrop
+  image. For horizontal parallax scrolling, for example, the regular image is
+  used for even camera positions, and the pre-shifted image (shifted left by 4
+  pixels) is used for odd camera positions. So for each change in camera
+  position, we alternate between the two images, creating the illusion of
+  scrolling in 4-pixel steps. After every other camera position change, we also
+  increment bdOffsetTablePtr to the next index, to scroll the backdrop by 8
+  pixels.
+
+  For a more in-depth explanation, also see:
+
+  https://github.com/smitelli/cosmore/blob/4ca928e5e9b28012190e5cb58dc174f2328c115f/src/game1.c#L714
+  https://lethalguitar.wordpress.com/2022/07/14/how-duke-nukem-iis-parallax-scrolling-worked/
   */
 
   byte random;
@@ -155,7 +187,12 @@ void UpdateBackdrop(void)
       bdAddress += 0x4000;
     }
 
-    // Set tile start offset to achieve scrolling past the first 4 pixels
+    // Set tile start offset to achieve scrolling past the first 4 pixels.
+    // For ever other vertical scroll step (`bdAutoScrollStep / 2`), we skip
+    // one row of tiles in the backdrop offset table (`* 80`). For every other
+    // horizontal camera position change, we move forward by one tile in the
+    // table. The table has enough entries to scroll up to 39 tiles, so after
+    // that, we need to wrap around - hence the `% 40`.
     bdOffsetTablePtr += bdAutoScrollStep / 2 * 80 + gmCameraPosX / 2 % 40;
   }
 
@@ -184,6 +221,7 @@ void UpdateBackdrop(void)
       bdAddress += 0x4000;
     }
 
+    // See above
     bdOffsetTablePtr += gmCameraPosY / 2 % 25 * 80 + gmCameraPosX / 2 % 40;
   }
 
@@ -227,6 +265,7 @@ void UpdateBackdrop(void)
       bdAddress = 0x4000 + bdAddressAdjust;
     }
 
+    // See above
     bdOffsetTablePtr += gmCameraPosX / 2 % 40;
   }
 }
