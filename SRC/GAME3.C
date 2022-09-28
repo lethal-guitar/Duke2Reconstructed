@@ -285,6 +285,9 @@ void pascal TryUnlockingDoor(bool* pSuccess, word neededKeyId, word handle)
  */
 void HUD_DrawLetterIndicator(word id)
 {
+  // This appears to draw the sprite at (0, 0), but it actually ends up drawn
+  // in the lower right part of the screen. The actual position is encoded in
+  // the sprite's x/y offset in the actor info data.
   SetDrawPage(gfxCurrentDisplayPage);
   DrawSprite(id, 0, 0, 0);
 
