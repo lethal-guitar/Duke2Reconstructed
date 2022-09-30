@@ -124,10 +124,10 @@ bool pascal RunJoystickCalibration(void)
   xDelta = (xMax - xMin) / 6;
   yDelta = (yMax - yMin) / 6;
 
-  jsThresholdLeft = xMin + xDelta;
+  jsThresholdLeft  = xMin + xDelta;
   jsThresholdRight = xMax - xDelta;
-  jsThresholdUp = yMin + yDelta;
-  jsThresholdDown = yMax - yDelta;
+  jsThresholdUp    = yMin + yDelta;
+  jsThresholdDown  = yMax - yDelta;
   jsCalibrated = true;
 
   return false;
