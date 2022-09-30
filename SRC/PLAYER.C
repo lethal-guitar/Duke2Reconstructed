@@ -108,6 +108,8 @@ void UpdatePlayer_Shooting(void)
 {
   // Which sprite/actor id to use for each shot direction, for each
   // weapon type
+  //
+  // [PERF] Missing `static` causes a copy operation here
   const word SHOT_SPRITE_MAP[] = {
     ACT_REGULAR_SHOT_VERTICAL,
     ACT_REGULAR_SHOT_VERTICAL,
@@ -318,6 +320,7 @@ void UpdatePlayer(void)
   //////////////////////////////////////////////////////////////////////////////
   if (plState == PS_AIRLOCK_DEATH_L || plState == PS_AIRLOCK_DEATH_R)
   {
+    // [PERF] Missing `static` causes a copy operation here
     const int AIRLOCK_DEATH_ARC[] = { -2, -2, -1, -1, 0 };
 
     plPosY += AIRLOCK_DEATH_ARC[plAirlockDeathStep];
@@ -1166,6 +1169,7 @@ updateJumping:
 updateClimbingLadder:
         if (plState == PS_CLIMBING_LADDER)
         {
+          // [PERF] Missing `static` causes a copy operation here
           const byte LADDER_CLIMB_ANIM[] = { 35, 36};
 
           plFallingSpeed = 0;

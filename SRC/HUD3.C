@@ -56,6 +56,7 @@ void DrawBossHealthBar_Impl(int health)
 
 void HUD_DrawBossHealthBar(word health)
 {
+  // [PERF] Missing `static` causes a copy operation here
   const word LABEL_TILES[] = {
     XY_TO_OFFSET(21, 6), // B
     XY_TO_OFFSET(34, 6), // O

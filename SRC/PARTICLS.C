@@ -160,6 +160,8 @@ void pascal UpdateAndDrawParticles(void)
   // This describes the vertical movement arc for particles: Fly up quickly,
   // slow down near the top of the arc, briefly stop, then fall down slowly
   // and then quicker until max speed is reached.
+  //
+  // [PERF] Missing `static` causes a copy operation here
   const sbyte MOVEMENT_TABLE[] = {
     -8, -8, -8, -8, -4, -4, -4, -2, -1, 0, 0, 1, 2, 4, 4, 4, 8, 8, 8, 8, 8,
      8,  8,  8,  8,  8,  8,  8,  8,  8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8

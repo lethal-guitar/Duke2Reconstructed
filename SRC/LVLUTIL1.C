@@ -49,6 +49,8 @@ void pascal SetMapSize(word width)
   // value needed to achieve the same result as if by multiplication.
   // This could be done by computing log2(width), but instead, we simply use
   // a lookup table of all possible width values, and then search for a match.
+  //
+  // [PERF] Missing `static` causes a copy operation here
   const word MAP_WIDTHS[] = { 32, 64, 128, 256, 512, 1024 };
 
   word i;

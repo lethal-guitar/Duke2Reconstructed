@@ -236,6 +236,8 @@ void pascal HUD_UpdateInventoryAnimation(void)
   int i = 0;
 
   // Map inventory index to position in the grid
+  //
+  // [PERF] Missing `static` causes copy operations here
   const byte X_POS[6] = { 0, 2, 0, 2, 0, 2 };
   const byte Y_POS[6] = { 0, 0, 2, 2, 4, 4 };
 
