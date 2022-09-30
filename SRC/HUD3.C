@@ -28,15 +28,27 @@
 
 HUD-related code, part 3
 
-TODO: Further document this file and the functions here
+The game itself is redrawn every frame (see game2.c), but the HUD is only drawn
+fully after loading a level (and when returning to gameplay from an in-game
+menu). During gameplay, only parts of the HUD that have changed are redrawn.
+
+Since the game uses two VGA video pages to implement double-buffering, the HUD
+needs to be drawn to both pages at once in order to make it appear persistent
+while the game is switching between pages.
 
 *******************************************************************************/
 
 
+/** Draw or redraw the boss health bar in the top-row */
 void DrawBossHealthBar_Impl(int health)
 {
   register word i;
 
+  // Erase previous health bar.
+  //
+  // [BUG] The screen is 40 tiles wide in total, and the boss health bar starts
+  // at position 6. So in case the health bar spans the entire available space,
+  // we'd need to erase 34 tiles. But only 30 are erased here.
   for (i = 0; i < 30; i++)
   {
     DrawStatusIcon_1x1(XY_TO_OFFSET(0, 11), 6 + i, 0);
@@ -44,16 +56,25 @@ void DrawBossHealthBar_Impl(int health)
 
   if (health > 0)
   {
+    // The health bar shrinks by one pixel for each point of damage the boss
+    // takes, but the health bar is drawn using 8x8-pixel tiles. The status
+    // icon tileset contains one tile with a full 8-pixel wide health bar block,
+    // and 7 tiles with different widths (7 pixels, 6 pixels etc. down to 1
+    // pixel).
+
+    // Draw as many full 8-pixel wide pieces of the health bar as we can
     for (i = 0; health / 8 > i; i++)
     {
       DrawStatusIcon_1x1(XY_TO_OFFSET(8, 11), 6 + i, 0);
     }
 
+    // Then draw the right piece to fill in the remaining width
     DrawStatusIcon_1x1(XY_TO_OFFSET(health % 8, 11), 6 + i, 0);
   }
 }
 
 
+/** Draw or redraw the boss health bar in the top-row along with a label */
 void HUD_DrawBossHealthBar(word health)
 {
   // [PERF] Missing `static` causes a copy operation here
@@ -69,29 +90,43 @@ void HUD_DrawBossHealthBar(word health)
   gmBossActivated = true;
 
   SetDrawPage(gfxCurrentDisplayPage);
+
+  // Draw the "BOSS" label
   for (i = 0; i < 4; i++)
   {
     DrawStatusIcon_1x1(LABEL_TILES[i], i + 1, 0);
   }
+
   DrawBossHealthBar_Impl(health);
 
   SetDrawPage(!gfxCurrentDisplayPage);
+
+  // Draw the "BOSS" label
   for (i = 0; i < 4; i++)
   {
     DrawStatusIcon_1x1(LABEL_TILES[i], i + 1, 0);
   }
+
   DrawBossHealthBar_Impl(health);
 }
 
 
+/** Start showing a message in the top-row
+ *
+ * The message itself will be drawn letter by letter in UpdateAndDrawActors()
+ * (game3.c).
+ */
 void pascal ShowInGameMessage(char* message)
 {
+  // Do not show messages if this is a boss level or if a hint machine is
+  // currently shown
   if (hudShowingHintMachineMsg || gmCurrentLevel > 6) { return; }
 
   hudCurrentMessage = message;
   hudMessageCharsPrinted = 1;
   hudMessageDelay = 0;
 
+  // Erase the top-row, in case another message is currently visible there
   SetDrawPage(gfxCurrentDisplayPage);
   FillScreenRegion(SFC_BLACK, 0, 0, SCREEN_WIDTH_TILES - 1, 0);
 
@@ -100,6 +135,7 @@ void pascal ShowInGameMessage(char* message)
 }
 
 
+/** Show a tutorial message if it hasn't been shown yet */
 void pascal ShowTutorial(TutorialId index, char* message)
 {
   if (!gmTutorialsShown[index])

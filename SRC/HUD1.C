@@ -28,11 +28,18 @@
 
 HUD-related code, part 1
 
-TODO: Further document this file and the functions here
+The game itself is redrawn every frame (see game2.c), but the HUD is only drawn
+fully after loading a level (and when returning to gameplay from an in-game
+menu). During gameplay, only parts of the HUD that have changed are redrawn.
+
+Since the game uses two VGA video pages to implement double-buffering, the HUD
+needs to be drawn to both pages at once in order to make it appear persistent
+while the game is switching between pages.
 
 *******************************************************************************/
 
 
+/** Draw or redraw player health display in the HUD */
 void pascal HUD_DrawHealth(word health)
 {
   word i;
@@ -68,6 +75,7 @@ void pascal HUD_DrawHealth(word health)
 }
 
 
+/** Update and draw the "low health" animation in the HUD */
 void pascal HUD_DrawLowHealthAnimation(word health)
 {
   word i;
@@ -98,6 +106,7 @@ void pascal HUD_DrawLowHealthAnimation(word health)
 }
 
 
+/** Draw or redraw ammo display in the HUD */
 void pascal HUD_DrawAmmo(word ammo)
 {
   if (ammo > MAX_AMMO)
@@ -132,8 +141,10 @@ void pascal HUD_DrawAmmo(word ammo)
 }
 
 
+/** Draw or redraw the weapon type indicator in the HUD */
 void pascal HUD_DrawWeapon(int weapon)
 {
+  // See `case ACT_LASER_TURRET` in HandleActorShotCollision (game3.c)
   plWeapon_hud = weapon;
 
   // Each weapon icon is 4 tiles wide, i.e. 32 pixels (4 * 8).
@@ -153,6 +164,7 @@ void pascal HUD_DrawWeapon(int weapon)
 }
 
 
+/** Add item to the player's inventory and update HUD */
 void pascal AddInventoryItem(word item)
 {
   int i = 0;
@@ -179,6 +191,13 @@ void pascal AddInventoryItem(word item)
 }
 
 
+/** Remove item from inventory if present, and update HUD
+ *
+ * Returns true if the item was successfully removed, false if the item wasn't
+ * in the inventory.
+ *
+ * Also starts an animation of the item blinking for a few frames.
+ */
 bool pascal RemoveFromInventory(word item)
 {
   int i;
@@ -231,6 +250,7 @@ bool pascal RemoveFromInventory(word item)
 }
 
 
+/** Update blinking animation for removed inventory items */
 void pascal HUD_UpdateInventoryAnimation(void)
 {
   int i = 0;
@@ -270,7 +290,7 @@ void pascal HUD_UpdateInventoryAnimation(void)
       // the animation would be a bit clearer.
       // My guess is that the game started out only having the
       // RemoveFromInventory() function and no animation, and the removal code
-      // thus made sense to have there. Later, the animation was added on
+      // thus made sense to have there. Later, the animation was added in
       // without restructuring the code too much.
       if (hudInventoryBlinkTimeLeft[i] == 1)
       {
@@ -283,6 +303,7 @@ void pascal HUD_UpdateInventoryAnimation(void)
 }
 
 
+/** Remove all items from the player's inventory */
 void pascal ClearInventory(void)
 {
   // A 0 value is used as indicator to mark the end of the inventory list. By

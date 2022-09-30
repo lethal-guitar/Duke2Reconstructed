@@ -112,13 +112,13 @@ void pascal ClearParticles(void)
  * Does nothing if all 5 particle groups are already in use.
  *
  * [NOTE] Due to the short period of the random number generator (see
- * coreutil.c), only two successive calls to this function can be made without any
- * other random number generation in-between. The problem is that one call to this
- * function consumes exactly 128 random numbers, and after 256 numbers, the
- * sequence starts repeating. Due to this, the particles resulting from the 3rd
- * call to this function end up in exactly the same positions and with exactly
- * the same velocities as those created by the 1st call, and thus they will
- * overlap the 1st call's particles and effectively render them invisible.
+ * coreutil.c), only two successive calls to this function can be made without
+ * any other random number generation in-between. The problem is that one call
+ * to this function consumes exactly 128 random numbers, and after 256 numbers,
+ * the sequence starts repeating. Due to this, the particles resulting from the
+ * 3rd call to this function end up in exactly the same positions and with
+ * exactly the same velocities as those created by the 1st call, and thus they
+ * will overlap the 1st call's particles and effectively render them invisible.
  */
 void pascal SpawnParticles(word x, word y, sbyte direction, byte color)
 {
@@ -208,9 +208,20 @@ void pascal UpdateAndDrawParticles(void)
         y = T2PX(group->y - gmCameraPosY) + *(data + i + 2);
 
         // Advance y update table index
-        // [BUG] It's actually possible for this to increment the index past the
-        // end of the MOVEMENT_TABLE array, causing some out-of-bounds reads.
-        // TODO explain why
+        //
+        // [BUG] It's actually possible for this to increment the index past
+        // the end of the MOVEMENT_TABLE array, causing some out-of-bounds
+        // reads.  tableIndex is initialized to a random number between 0 and
+        // 15 (see InitParticleSystem()). Particle groups live for 28 frames.
+        // So if a particle has an initial tableIndex of 15, it will reach
+        // index 42 on the penultimate frame, and that index will be used to do
+        // a table lookup on the 28th frame. MOVEMENT_TABLE only has 41 entries,
+        // though. Indices 41 and 42 are thus reading whatever memory follows
+        // after MOVEMENT_TABLE. This happens to be the `sysTimerFrequency`
+        // variable (see music.c), which is initialized to 280. In little-endian
+        // representation, that value corresponds to the number 24 followed by
+        // a 1. So any particles which happen to have an initial tableIndex of
+        // 14 or 15 will make use of those values.
         *(data + i + 1) += 1;
 
         // Draw particle if within viewport

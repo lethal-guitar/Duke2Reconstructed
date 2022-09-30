@@ -28,11 +28,18 @@
 
 HUD-related code, part 2
 
-TODO: Further document this file and the functions here
+The game itself is redrawn every frame (see game2.c), but the HUD is only drawn
+fully after loading a level (and when returning to gameplay from an in-game
+menu). During gameplay, only parts of the HUD that have changed are redrawn.
+
+Since the game uses two VGA video pages to implement double-buffering, the HUD
+needs to be drawn to both pages at once in order to make it appear persistent
+while the game is switching between pages.
 
 *******************************************************************************/
 
 
+/** Draw or redraw the level number in the HUD */
 void pascal HUD_DrawLevelNumber(word level)
 {
   register int offset;
@@ -49,6 +56,7 @@ void pascal HUD_DrawLevelNumber(word level)
 }
 
 
+/** Draw or redraw the HUD background */
 void pascal HUD_DrawBackground(void)
 {
   int i;
@@ -64,6 +72,7 @@ void pascal HUD_DrawBackground(void)
 }
 
 
+/** Draw or redraw the player's inventory in the HUD */
 void pascal HUD_DrawInventory(void)
 {
   register int i = 0;
@@ -94,4 +103,3 @@ void pascal HUD_DrawInventory(void)
   SetDrawPage(!gfxCurrentDisplayPage);
   DrawStatusIcon_2x2(XY_TO_OFFSET(31, 4), X_POS[i] + 34, Y_POS[i] + 3);
 }
-
