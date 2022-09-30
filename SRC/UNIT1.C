@@ -248,13 +248,25 @@ void pascal SetUpParameterRead(char far** pText, char* outOriginalEnd)
  */
 void interrupt KeyboardHandler(void)
 {
+  // Retrieve last key event from the keyboard controller.
+  // The value is a combination of the scancode which identifies the key
+  // (see scancode.h), and a flag bit (the most significant bit) indicating
+  // if the key was pressed or released. A set bit indicates a key release,
+  // while an unset bit means the key was pressed.
+  //
+  // For an in-depth explanation of IBM PC keyboard handling, see
+  // https://cosmodoc.org/topics/keyboard-functions
   kbLastScancode = DN2_inportb(0x60);
 
+  // Ignore extended multi-byte scancodes (introduced with the IBM PS/2 line).
   if (kbLastScancode != SCANCODE_EXTENDED)
   {
+    // These two port writes are only needed on PC and PC XT systems, which
+    // aren't supported by the game.
     DN2_outportb(0x61, DN2_inportb(0x61) | 0x80);
     DN2_outportb(0x61, DN2_inportb(0x61) & ~0x80);
 
+    // Update our key state array
     if ((kbLastScancode & 0x80) != 0)
     {
       kbKeyState[kbLastScancode & 0x7f] = false;
@@ -265,6 +277,7 @@ void interrupt KeyboardHandler(void)
     }
   }
 
+  // Acknowledge interrupt to interrupt controller
   DN2_outportb(0x20, 0x20);
 }
 
@@ -308,6 +321,8 @@ void pascal ToggleCheckbox(byte index, byte* checkboxData)
  *
  * The tiles in the original location are erased, tiles in the new location
  * are overwritten.
+ * The total number of tiles contained in the specified section mustn't
+ * exceed 3000.
  */
 void pascal Map_MoveSection(
   word left,
@@ -321,6 +336,7 @@ void pascal Map_MoveSection(
   word colOffset;
   word rowOffset;
 
+  // Copy tiles from source area into temporary buffer, and erase source area
   rowOffset = 0;
   for (y = top; y <= bottom; y++)
   {
@@ -336,6 +352,7 @@ void pascal Map_MoveSection(
     rowOffset += right - left + 1;
   }
 
+  // Now use content of temp buffer to set tiles in destination area
   rowOffset = 0;
   top += distance;
   bottom += distance;
@@ -352,6 +369,9 @@ void pascal Map_MoveSection(
 
     rowOffset += right - left + 1;
   }
+
+  // [PERF] It would be fairly easy to redesign this function so that it
+  // doesn't need a temporary buffer. That would save 3000 bytes of memory.
 }
 
 
@@ -359,6 +379,16 @@ void pascal Map_MoveSection(
 #include "hiscore.c"
 
 
+/** Read names of saved games from disk
+ *
+ * The game's menus present saved games as a list of 8 named entries. But the
+ * names of the saved games aren't stored in the saved game files themselves.
+ * Instead, a separate file is used to store only the names of all saved
+ * games.
+ *
+ * This function reads these names from the file into the global variable
+ * saveSlotNames.
+ */
 void ReadSaveSlotNames(void)
 {
   int i;
@@ -376,6 +406,11 @@ void ReadSaveSlotNames(void)
 }
 
 
+/** Write names of saved games to disk
+ *
+ * Persists current content of the global variable saveSlotNames.
+ * See ReadSaveSlotNames().
+ */
 void WriteSaveSlotNames(void)
 {
   int i;
@@ -394,7 +429,7 @@ void WriteSaveSlotNames(void)
 #include "memory.c"
 
 
-/** Load 16-color fullscreen image and its palette
+/** Load 16-color fullscreen image and prepare palette
  *
  * Loads the image specified by the filename, writes it into the framebuffer,
  * and prepares the palette.  To actually make the image appear with the

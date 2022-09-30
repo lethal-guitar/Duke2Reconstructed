@@ -26,13 +26,19 @@
 
 /*******************************************************************************
 
-Joystick support code, part 2
-
-TODO: Further document this file and the functions here
+Joystick support code, part 2: Joystick calibration
 
 *******************************************************************************/
 
 
+/** Runs the joystick calibration dialog
+ *
+ * This function draws text on screen during the process, but it doesn't draw
+ * the message box frame. This is handled by a script. See ShowOptionsMenu() in
+ * main.c.
+ *
+ * Returns true if interrupted by a keypress, false if it ran to completion.
+ */
 bool pascal RunJoystickCalibration(void)
 {
   word i;
@@ -47,9 +53,12 @@ bool pascal RunJoystickCalibration(void)
   DrawText(5, 6, "Move the joystick towards the");
   DrawText(5, 7, "UPPER LEFT and press a button.");
 
+  // This loop keeps polling the joystick position until either button 1 or 2
+  // is pressed. The result is stored in xMin and yMin.
   i = 15;
   do
   {
+    // No clue what this is for, the variable is never read.
     if (++i == 23)
     {
       i = 15;
@@ -57,29 +66,36 @@ bool pascal RunJoystickCalibration(void)
 
     PollJoystickPosition(&xMin, &yMin);
 
+    // Abort on any keyboard input
     if (ANY_KEY_PRESSED())
     {
       return true;
     }
 
+    // Read joystick button state
     data = DN2_inportb(0x201);
   }
   while (data & 0x20 && data & 0x10);
 
+  // Now wait until neither of the two buttons is pressed
   do
   {
     data = DN2_inportb(0x201);
   }
   while (((int)data & 0x30) != 0x30);
 
+  // Wait ~285 ms
   WaitTicks(80);
 
   DrawText(5, 9, "Move the joystick towards the");
   DrawText(5, 10, "LOWER RIGHT and press a button.");
 
+  // This is the same loop as above, but this time, the results are stored in
+  // xMax and yMax.
   i = 15;
   do
   {
+    // No clue what this is for, the variable is never read.
     if (++i == 23)
     {
       i = 15;
@@ -87,31 +103,40 @@ bool pascal RunJoystickCalibration(void)
 
     PollJoystickPosition(&xMax, &yMax);
 
+    // Abort on any keyboard input
     if (ANY_KEY_PRESSED())
     {
       return true;
     }
 
+    // Read joystick button state
     data = DN2_inportb(0x201);
   }
   while (data & 0x20 && data & 0x10);
 
+  // Wait ~285 ms
   WaitTicks(80);
 
   DrawText(5, 12, "Select fire button.  The other");
   DrawText(5, 13, "button is used for jumping.");
 
+  // Wait for a button press
   do
   {
+    // Abort on any keyboard input
     if (ANY_KEY_PRESSED())
     {
       return true;
     }
 
+    // Read joystick button state
     data = DN2_inportb(0x201);
   }
   while (data & 0x20 && data & 0x10);
 
+  // If the 1st button was pressed, then the buttons are considered "swapped"
+  // with respect to the default, which is that the 1st button is for jumping
+  // and the 2nd one for shooting.
   if (data & 0x20)
   {
     jsButtonsSwapped = false;
@@ -121,6 +146,8 @@ bool pascal RunJoystickCalibration(void)
     jsButtonsSwapped = true;
   }
 
+  // Compute threshold values from the minimum and maximum axis values we
+  // measured above
   xDelta = (xMax - xMin) / 6;
   yDelta = (yMax - yMin) / 6;
 
@@ -128,6 +155,9 @@ bool pascal RunJoystickCalibration(void)
   jsThresholdRight = xMax - xDelta;
   jsThresholdUp    = yMin + yDelta;
   jsThresholdDown  = yMax - yDelta;
+
+  // The joystick is now calibrated, and can be used for input - set the
+  // corresponding flag to inform other parts of the code.
   jsCalibrated = true;
 
   return false;
