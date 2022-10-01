@@ -6,11 +6,16 @@ SHAREWARE_FLAG=
 
 # This works with the standard install location for Borland C++ 3.0 or 3.1.
 # Adapt as needed for other compilers (e.g. Turbo C++).
+
+!if !$d(BCROOT)
 BCROOT=C:\BORLANDC
+!endif
+
+CC=$(BCROOT)\BIN\bcc
+TLINK=$(BCROOT)\BIN\tlink
+
 INCLUDEDIR=$(BCROOT)\INCLUDE
 LIBDIR=$(BCROOT)\LIB
-CC=bcc
-TLINK=tlink
 
 # Most flags are set in TURBOC.CFG. Add additional flags here to override
 # what's set in the cfg file.
