@@ -1059,6 +1059,9 @@ void UpdateAndDrawTileDebris(void)
   // set the tick counter to 0, which stops this function from doing anything.
   // The tile debris state remains, it will be overwritten the next time a map
   // section is destroyed.
+  //
+  // [NOTE] 80 seems excessively high, given that not a single tile debris
+  // piece remains visible after just 11 frames.
   gmExplodingSectionTicksElapsed++;
   if (gmExplodingSectionTicksElapsed == 80)
   {
