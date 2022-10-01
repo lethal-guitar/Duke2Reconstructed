@@ -303,8 +303,7 @@ void CheckLetterCollectionPityBonus(void)
   // true. The author most likely intended to compare only the low byte of
   // plCollectedLetters to 5. But since this function isn't called when
   // collecting all the letters in order, the bug doesn't materialize.
-  if (((int)(plCollectedLetters >> 8) & 0x1F) == 0x1F &&
-      plCollectedLetters != 5)
+  if ((plCollectedLetters >> 8 & 0x1F) == 0x1F && plCollectedLetters != 5)
   {
     ShowInGameMessage(
       "OH, WELL... TEN THOUSAND POINTS IS*BETTER THAN NOTHING.");

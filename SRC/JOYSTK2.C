@@ -82,7 +82,7 @@ bool pascal RunJoystickCalibration(void)
   {
     data = DN2_inportb(0x201);
   }
-  while (((int)data & 0x30) != 0x30);
+  while ((data & 0x30) != 0x30);
 
   // Wait ~285 ms
   WaitTicks(80);
