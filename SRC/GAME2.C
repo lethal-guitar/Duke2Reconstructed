@@ -935,11 +935,9 @@ void ResetEffectsAndPlayerShots(void)
 }
 
 
-/** Erase map data and spawn debris for the specified region */
+/** Erase map data and spawn flying debris for the specified region */
 void pascal Map_DestroySection(word left, word top, word right, word bottom)
 {
-  // TODO Document further
-
   int i;
   word x;
   word y;
@@ -950,12 +948,15 @@ void pascal Map_DestroySection(word left, word top, word right, word bottom)
   right += 1;
   bottom += 1;
 
+  // Set up state for flying tile debris
   gmExplodingSectionLeft = left;
   gmExplodingSectionTop = top;
   gmExplodingSectionRight = right;
   gmExplodingSectionBottom = bottom;
   gmExplodingSectionTicksElapsed = 1;
 
+  // Spawn pieces of debris for each tile in the affected region, and erase
+  // map data
   i = 0;
 
   for (y = top; y < bottom; y++)
@@ -964,14 +965,24 @@ void pascal Map_DestroySection(word left, word top, word right, word bottom)
     {
       tileValue = Map_GetTile(x, y);
 
-      if (tileValue)
+      if (tileValue) // skip empty map cells
       {
+        // Tile debris state is stored as a plain array of word values, not
+        // structs. The data layout is:
+        //
+        // 0: word xVelocity;
+        // 1: word tableIndex;
+        // 2: word tileValue;
+        // 3: word x
+        // 4: word y
+
         gmTileDebrisStates[i + 0] = 3 - RandomNumber() % 6;
         gmTileDebrisStates[i + 1] = RandomNumber() % 5;
         gmTileDebrisStates[i + 2] = tileValue;
         gmTileDebrisStates[i + 3] = x - gmCameraPosX;
         gmTileDebrisStates[i + 4] = y - gmCameraPosY;
 
+        // Advance to the start of the next tile debris state object
         i += 5;
 
         Map_SetTile(0, x, y);
@@ -994,16 +1005,18 @@ static void pascal DrawTileDebris(word tileValue, word x, word y)
 /** Update and draw a currently active tile explosion */
 void UpdateAndDrawTileDebris(void)
 {
-  // TODO Document further
-
+  // [PERF] Missing `static` causes a copy operation here
   const int Y_MOVEMENT[] = { -3, -3, -2, -2, -1, 0, 0, 1, 2, 2, 3 };
 
   register word i;
   register word size;
   word far* debris;
 
+  // If there's no flying tile debris right now, stop here.
   if (gmExplodingSectionTicksElapsed == 0) { return; }
 
+  // size here is the number of word values we need to process. Each tile debris
+  // piece occupies 5 words.
   size =
     (gmExplodingSectionRight - gmExplodingSectionLeft) *
     (gmExplodingSectionBottom - gmExplodingSectionTop) * 5;
@@ -1012,19 +1025,40 @@ void UpdateAndDrawTileDebris(void)
 
   for (i = 0; i < size; i += 5)
   {
+    // Tile debris state is stored as a plain array of word values, not structs.
+    // The data layout is:
+    //
+    // 0: word xVelocity;
+    // 1: word tableIndex;
+    // 2: word tileValue;
+    // 3: word x
+    // 4: word y
     debris = gmTileDebrisStates + i;
 
-    debris[3] += debris[0];
-    debris[4] += Y_MOVEMENT[debris[1]];
+    debris[3] += debris[0];             // debris->x += xVelocity
+    debris[4] += Y_MOVEMENT[debris[1]]; // debris->y += Y_MOVEMENT[
+                                        //   debris->tableIndex]
 
-    if (debris[1] < 13)
+    // [BUG] The Y_MOVEMENT array only has 11 elements, but here we increment
+    // the index up to a value of 12 (13th element). This causes an
+    // out-of-bounds read for debris pieces which have reached index 11. The
+    // next 4 bytes in memory produce the values 256 and 770 when interpreted
+    // as two integers. Since these values are fairly large (possibly larger
+    // than the level is tall), all debris pieces effectively disappear from
+    // view after just a few frames.
+    if (debris[1] < 13) // if (debris->tableIndex < 13)
     {
-      debris[1]++;
+      debris[1]++; // debris->tableIndex++
     }
 
+    // arguments are: tileValue, x, y
     DrawTileDebris(debris[2], debris[3], debris[4]);
   }
 
+  // Advance the timer, until the maximum time is reached. At that point, we
+  // set the tick counter to 0, which stops this function from doing anything.
+  // The tile debris state remains, it will be overwritten the next time a map
+  // section is destroyed.
   gmExplodingSectionTicksElapsed++;
   if (gmExplodingSectionTicksElapsed == 80)
   {
@@ -1092,7 +1126,7 @@ bool pascal SpawnEffect(word id, word x, word y, word type, word spawnDelay)
       state->x = x;
       state->y = y;
       state->type = type;
-      state->unk1 = 0;
+      state->movementStep = 0;
       state->spawnDelay = spawnDelay;
       break;
     }
@@ -1188,7 +1222,7 @@ void pascal SpawnBurnEffect(word effectId, word sourceId, word x, word y)
       offset = gfxActorInfoData[sourceId];
       height = AINFO_HEIGHT(offset);
       width = AINFO_WIDTH(offset);
-      state->unk1 = height;
+      state->movementStep = height;
       state->spawnDelay = width;
 
       // All state set up, UpdateAndDrawEffects() can now process this effect
@@ -1204,8 +1238,6 @@ void pascal SpawnBurnEffect(word effectId, word sourceId, word x, word y)
 /** Update and draw all currently active effects */
 void UpdateAndDrawEffects(void)
 {
-  // TODO Document further
-
   register EffectState* state;
   register int j;
   word i;
@@ -1218,6 +1250,8 @@ void UpdateAndDrawEffects(void)
 
     if (state->type == EM_SCORE_NUMBER)
     {
+      // For score numbers, the spawnDelay field is used to keep track of
+      // elapsed time.
       const byte SCORE_NUMBER_ANIMATION[] =
         { 0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1 };
 
@@ -1231,6 +1265,7 @@ void UpdateAndDrawEffects(void)
       {
         if (state->spawnDelay > 20)
         {
+          // The active field also doubles as animation frame table index.
           state->active++;
 
           if (state->spawnDelay > 34)
@@ -1256,36 +1291,40 @@ void UpdateAndDrawEffects(void)
     {
       if (state->active % 2)
       {
-        // See SpawnBurnEffect(). spawnDelay is source sprite width, unk1 is
-        // source sprite height.
+        // See SpawnBurnEffect(). spawnDelay is source sprite width,
+        // movementStep is source sprite height.
         // So this spawns an effect somewhere within the source sprite's
         // bounding box, randomly placed.
         SpawnEffect(
           state->framesToLive, // ID to spawn
           state->x + (int)RandomNumber() % state->spawnDelay,
-          state->y - (int)RandomNumber() % state->unk1,
+          state->y - (int)RandomNumber() % state->movementStep,
           EM_RISE_UP,
           0);
       }
 
       state->active--;
     }
-    else
+    else // all other types of effects
     {
       if (state->type == EM_NONE || state->type == EM_RISE_UP)
       {
+        // Delete effects that have disappeared from view
         if (!IsSpriteOnScreen(state->id, state->active - 1, state->x, state->y))
         {
           state->active = 0;
           continue;
         }
 
+        // If a spawn delay is set, the effect doesn't become active immediately
         if (state->spawnDelay > 0)
         {
           state->spawnDelay--;
           continue;
         }
 
+        // Special case for ACT_EXPLOSION_FX_1: Play an explosion sound effect
+        // on the first frame.
         if (state->id == ACT_EXPLOSION_FX_1 && state->active == 1)
         {
           if (RandomNumber() & 1)
@@ -1305,8 +1344,11 @@ void UpdateAndDrawEffects(void)
           state->y,
           DS_NORMAL);
 
+        // Special case for ACT_FLAME_FX: Burn away tiles which have the
+        // 'flammable' attribute
         if (state->id == ACT_FLAME_FX && state->active == 2)
         {
+          // List of pairs of (x, y)
           static sbyte TILE_BURN_OFFSETS[] = {
             0, 0, 0,-1, 0, -2, 1, -2, 2, -2, 2, -1, 2, 0, 1, 0 };
 
@@ -1331,6 +1373,8 @@ void UpdateAndDrawEffects(void)
           }
         }
 
+        // This keeps track of the effect's life time, and also advances to
+        // the next animation frame.
         state->active++;
 
         if (state->type == EM_RISE_UP)
@@ -1340,21 +1384,24 @@ void UpdateAndDrawEffects(void)
 
         if (state->active == state->framesToLive)
         {
-          state->active = 0;
+          state->active = 0; // Delete the effect
           continue;
         }
       }
       else if (state->type < 9) // one of EM_FLY_XX or EM_BLOW_IN_WIND
       {
+        // Delete effect if it has disappeared from screen *and* has already
+        // been alive for 9 frames (movementStep is advanced by 2 every frame)
         if (
-          state->unk1 > 17 &&
+          state->movementStep > 17 &&
           !IsSpriteOnScreen(state->id, state->active - 1, state->x, state->y) &&
-          state->unk1 > 12)
+          state->movementStep > 12) // [NOTE] Redundant, due to the `> 17` above
         {
           state->active = 0;
           continue;
         }
 
+        // If a spawn delay is set, the effect doesn't become active immediately
         if (state->spawnDelay > 0)
         {
           state->spawnDelay--;
@@ -1368,24 +1415,28 @@ void UpdateAndDrawEffects(void)
           state->y,
           DS_NORMAL);
 
+        // Keep looping the animation
         state->active++;
-
         if (state->active == state->framesToLive)
         {
           state->active = 1;
         }
 
-        state->x += EFFECT_MOVEMENT_TABLES[state->type][state->unk1];
-        state->y += EFFECT_MOVEMENT_TABLES[state->type][state->unk1 + 1];
+        state->x += EFFECT_MOVEMENT_TABLES[state->type][state->movementStep];
+        state->y += EFFECT_MOVEMENT_TABLES[state->type][state->movementStep + 1];
 
-        state->unk1 += 2;
+        state->movementStep += 2;
 
-        if (EFFECT_MOVEMENT_TABLES[state->type][state->unk1] == -127)
+        // -127 denotes the end of the movement sequence, at this point, we keep
+        // applying the very last movement offset for all subsequent frames
+        if (EFFECT_MOVEMENT_TABLES[state->type][state->movementStep] == -127)
         {
-          state->unk1 -= 2;
+          state->movementStep -= 2;
         }
       }
 
+      // Handle effects that damage the player. This doesn't apply to score
+      // numbers and burn effect spawners.
       if (
         EffectIsDamaging(state->id) && AreSpritesTouching(
           state->id, state->active - 1, state->x, state->y,
@@ -1513,14 +1564,18 @@ void pascal SpawnPlayerShot(word id, word x, word y, word direction)
 /** Update and draw all currently active player shots */
 void UpdateAndDrawPlayerShots(void)
 {
-  // TODO Document further
-
+  // See GET_FIELD below. This is a list of memory offsets into the PlayerShot
+  // struct, for referencing the y and x fields.
   static const byte OFFSET_TO_POS_FIELD[] = { 4, 4, 3, 3 };
 
+  // Lookup tables for shot movement. The entries are ordered by shot direction:
+  // up, down, left, right. The value is added to the shot's appropriate data
+  // field (x or y) in order to move the shot.
   static const sbyte SLOW_SHOT_MOVEMENT[] = { -2, 2, -2, 2 };
   static const sbyte FAST_SHOT_MOVEMENT[] = { -5, 5, -5, 5 };
   static const sbyte MEDIUM_SHOT_MOVEMENT[] = { -3, 3, -3, 3 };
 
+  // This is a list of pairs of (x, y)
   static const sbyte ROCKET_SMOKE_SPAWN_OFFSET[] = { 0, 0, 0, -2, 2, 0, 0, 0 };
 
   PlayerShot* state;
@@ -1534,14 +1589,18 @@ void UpdateAndDrawPlayerShots(void)
 
   for (i = 0; i < MAX_NUM_PLAYER_SHOTS; i++)
   {
+    // Skip deleted shots
     if (gmPlayerShotStates[i].active == 0) { continue; }
 
     state = gmPlayerShotStates + i;
 
-    // TestShotCollision() in game3.c sets the high bit to mark shots that
-    // have hit an enemy.
+    // TestShotCollision() in game3.c sets the high bit to mark shots that have
+    // hit an enemy. These shots are still drawn for one more frame, and then
+    // deleted.
     if (state->active & 0x8000)
     {
+      // Unset the marker bit, since we need the active field in order to
+      // determine the right animation frame.
       state->active &= 0x7FFF;
       DrawActor(state->id, state->active - 1, state->x, state->y, DS_NORMAL);
 
@@ -1549,6 +1608,7 @@ void UpdateAndDrawPlayerShots(void)
     }
     else
     {
+      // Remove shots that have left the playing field (aka screen)
       if (
         !IsSpriteOnScreen(state->id, state->active - 1, state->x, state->y))
       {
@@ -1558,6 +1618,7 @@ void UpdateAndDrawPlayerShots(void)
 
       DrawActor(state->id, state->active - 1, state->x, state->y, DS_NORMAL);
 
+      // Move the shot, according to its type
       switch (state->id)
       {
         case ACT_REGULAR_SHOT_HORIZONTAL:
@@ -1565,6 +1626,9 @@ void UpdateAndDrawPlayerShots(void)
           if (CheckWorldCollision(
             MD_PROJECTILE, state->id, state->active - 1, state->x, state->y))
           {
+            // Spawn a flame at the impact location. This makes it possible to
+            // burn flammable tiles with the regular weapon
+            // (see UpdateAndDrawEffects()).
             SpawnEffect(
               ACT_FLAME_FX,
               state->x - (state->id == ACT_REGULAR_SHOT_VERTICAL ? 1 : 0),
@@ -1578,6 +1642,8 @@ void UpdateAndDrawPlayerShots(void)
             GET_FIELD(state->direction)
               += SLOW_SHOT_MOVEMENT[state->direction - SD_UP];
 
+            // Animation
+            //
             // [NOTE] Unnecessary, since the sprite has only one frame
             state->active++;
             if (state->active == state->numFrames)
@@ -1598,6 +1664,8 @@ void UpdateAndDrawPlayerShots(void)
         case ACT_REACTOR_FIRE_R:
         case ACT_DUKES_SHIP_LASER_SHOT:
           // These fly through walls, so no collision checking
+
+          // Animation
           state->active++;
           if (state->active == state->numFrames)
           {
@@ -1613,6 +1681,12 @@ void UpdateAndDrawPlayerShots(void)
         case ACT_DUKE_FLAME_SHOT_DOWN:
         case ACT_DUKE_FLAME_SHOT_LEFT:
         case ACT_DUKE_FLAME_SHOT_RIGHT:
+          // Somewhat amusingly, the flame thrower *can't* burn away flammable
+          // tiles, even though it literally shoots fire. This is because the
+          // tile burning is triggered by effects using the ACT_FLAME_FX sprite,
+          // not by the player's shots.
+          // See UpdateAndDrawEffects()
+
           // The flame thrower flies through walls, so no collision checking
           GET_FIELD(state->direction)
             += FAST_SHOT_MOVEMENT[state->direction - SD_UP];
@@ -1635,6 +1709,7 @@ void UpdateAndDrawPlayerShots(void)
               state->x,
               state->y))
             {
+              // Spawn an explosion effect near the location of impact
               if (state->id < ACT_DUKE_ROCKET_LEFT)
               {
                 SpawnEffect(
@@ -1655,11 +1730,16 @@ void UpdateAndDrawPlayerShots(void)
               }
 
               PlaySound(SND_EXPLOSION);
+
+              // Spawn flames at the impact location. This makes it possible to
+              // burn flammable tiles with the rocket launcher
+              // (see UpdateAndDrawEffects()).
               SpawnBurnEffect(ACT_FLAME_FX, state->id, state->x, state->y);
               state->active = 0; // delete
             }
             else
             {
+              // Spawn smoke puffs to mark the rocket's trail
               SpawnEffect(
                 ACT_SMOKE_PUFF_FX,
                 state->x + smokeSpawnX,

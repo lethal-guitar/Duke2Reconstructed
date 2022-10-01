@@ -171,9 +171,9 @@ typedef struct {
   word x;
   word y;
   word type;
-  word unk1;
+  word movementStep;
   word spawnDelay;
-  word unk2, unk3, unk4, unk5;
+  word unk2, unk3, unk4, unk5; // Padding?
 } EffectState;
 
 
