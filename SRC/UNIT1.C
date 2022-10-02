@@ -372,6 +372,17 @@ void pascal Map_MoveSection(
 
   // [PERF] It would be fairly easy to redesign this function so that it
   // doesn't need a temporary buffer. That would save 3000 bytes of memory.
+  //
+  // The following code is all that's needed, insted of the two loops:
+  //
+  //   for (y = bottom; y >= top; y--)
+  //   {
+  //     for (x = left; x <= right; x++)
+  //     {
+  //       Map_SetTile(Map_GetTile(x, y), x, y + distance);
+  //       Map_SetTile(0, x, y);
+  //     }
+  //   }
 }
 
 
