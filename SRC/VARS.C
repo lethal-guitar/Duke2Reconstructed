@@ -209,7 +209,7 @@ bool plKilledInShip;
 word gmPlayerEatingActor;
 
 bool gmRequestUnlockNextForceField;
-bool plInteractAnimTicks;
+byte plInteractAnimTicks;
 bool plBlockLookingUp;
 
 bool mapHasEarthquake;
