@@ -1628,7 +1628,7 @@ void ShowAttractLoop(void)
     demoIsRecording = false;
     demoIsPlaying = true;
     InitDemoPlayback();
-    gmDifficulty = 3;
+    gmDifficulty = DIFFICULTY_HARD;
     StopMusic();
     MM_PopChunk(CT_MENU_MUSIC);
     ResetPlayerState();

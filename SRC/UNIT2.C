@@ -399,7 +399,7 @@ void ReadOptionsFile(void)
     kbBindingJump = SCANCODE_CTRL;
     kbBindingFire = SCANCODE_ALT;
 
-    gmDifficulty = 1;
+    gmDifficulty = DIFFICULTY_EASY;
     sndSoundEnabled = true;
     jsCalibrated = false;
 
