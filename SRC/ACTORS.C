@@ -1985,6 +1985,10 @@ void pascal Act_MovingMapPartTrigger(word handle)
   ActorState* state = gmActorStates + handle;
   word descIndex;
   word right;
+
+  // [UNSAFE] No range checking here. If a level file contains more than 70
+  // dynamic map parts, this will cause a buffer overflow when writing to
+  // `mapPart` further down.
   MovingMapPartState* mapPart = gmMovingMapParts + gmNumMovingMapParts;
 
   state->drawStyle = DS_INVISIBLE;
