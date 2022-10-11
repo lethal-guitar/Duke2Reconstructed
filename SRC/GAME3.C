@@ -935,6 +935,11 @@ void pascal UpdateActorPlayerCollision(word handle)
 
         PlaySound(SND_ITEM_PICKUP);
 
+        // [BUG] A decrement of gmMerchCollected is missing here. This makes
+        // secret bonus 4 (all merchandise collected) impossible to attain on
+        // levels that feature the "NUKEM" letter pickups. See SpawnActorInSlot
+        // in actors.c.
+
         state->deleted = true;
         break;
 
@@ -958,6 +963,11 @@ void pascal UpdateActorPlayerCollision(word handle)
         GiveScore(100);
 
         PlaySound(SND_ITEM_PICKUP);
+
+        // [BUG] A decrement of gmMerchCollected is missing here. This makes
+        // secret bonus 4 (all merchandise collected) impossible to attain on
+        // levels that feature the "NUKEM" letter pickups. See SpawnActorInSlot
+        // in actors.c.
 
         state->deleted = true;
         break;
@@ -983,6 +993,11 @@ void pascal UpdateActorPlayerCollision(word handle)
 
         PlaySound(SND_ITEM_PICKUP);
 
+        // [BUG] A decrement of gmMerchCollected is missing here. This makes
+        // secret bonus 4 (all merchandise collected) impossible to attain on
+        // levels that feature the "NUKEM" letter pickups. See SpawnActorInSlot
+        // in actors.c.
+
         state->deleted = true;
         break;
 
@@ -1006,6 +1021,11 @@ void pascal UpdateActorPlayerCollision(word handle)
         GiveScore(100);
 
         PlaySound(SND_ITEM_PICKUP);
+
+        // [BUG] A decrement of gmMerchCollected is missing here. This makes
+        // secret bonus 4 (all merchandise collected) impossible to attain on
+        // levels that feature the "NUKEM" letter pickups. See SpawnActorInSlot
+        // in actors.c.
 
         state->deleted = true;
         break;
@@ -1051,6 +1071,11 @@ void pascal UpdateActorPlayerCollision(word handle)
 
           PlaySound(SND_ITEM_PICKUP);
         }
+
+        // [BUG] A decrement of gmMerchCollected is missing here. This makes
+        // secret bonus 4 (all merchandise collected) impossible to attain on
+        // levels that feature the "NUKEM" letter pickups. See SpawnActorInSlot
+        // in actors.c.
 
         state->deleted = true;
         break;
