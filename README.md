@@ -249,7 +249,7 @@ I used the LZEXE-compressed variant for this project.
 For reference, here's a list of all the Duke Nukem II binaries I have,
 along with their SHA-256 hashes.
 The first two of them can be reproduced exactly using the source code in this repository.
-The 3rd one should also be reproducible, but I haven't tried that yet.
+The 3rd one should also be reproducible by using PKLITE instead of LZEXE, but I haven't tried that yet.
 
 
 Type | Compression | Size | SHA256 | Origin
