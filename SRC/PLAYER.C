@@ -104,6 +104,13 @@ void ReadInput(void)
 }
 
 
+/** Handle shooting
+ *
+ * Tests for fire button presses and spawns player shots accordingly.
+ * This includes the logic for ammo consumption, rapid fire, placement
+ * of the shot based on current player orientation and pose, and recoil
+ * animations.
+ */
 void UpdatePlayer_Shooting(void)
 {
   // Which sprite/actor id to use for each shot direction, for each
@@ -1486,8 +1493,59 @@ done:
 }
 
 
+/** Pace the game and update the player
+ *
+ * This unassuming little function is central to maintaining the game's speed.
+ * It's invoked near the beginning of each frame in UpdateAndDrawGame().  It
+ * first waits a fixed amount of ticks depending on the chosen game speed, then
+ * reads inputs and updates the player.
+ */
 void WaitAndUpdatePlayer(void)
 {
+  // This delay causes the previous frame to remain on screen for some amount
+  // of time before rendering of the next frame starts, thus making the game
+  // run at a somewhat constant framerate.
+  //
+  // Crucially though, the waiting time doesn't take into account how much time
+  // has passed since the last frame. It therefore adds a fixed delay on top of
+  // the time that's already needed each frame to update and render the game.
+  // If that time fluctuates, e.g. because fewer or more sprites are on screen,
+  // the game also slows down or speeds up accordingly.
+  //
+  // The normal (as in, used by the majority of games) pattern for handling
+  // this is to measure how much time has elapsed since the last frame, and
+  // then only wait for the _remainder_ of the total time needed to achieve a
+  // certain frame rate. So when aiming for 60 FPS, for example, each frame
+  // persists for 16.6 ms (1000 ms / 60). If it takes 10 ms to produce a new
+  // frame, we thus would need to wait for 6.6 ms in order to hit the target
+  // frame rate. If another frame takes only 8 ms, we wait for 8.6 ms, etc. But
+  // instead, here the game just always waits for the same amount of time. The
+  // default game speed (4) results in a waiting time of 8 ticks (12 - 4),
+  // which correponds to roughly 57 ms. That would result in a frame rate of
+  // about 17.5 FPS if rendering and updating the game would take no time at
+  // all. On period-correct hardware, that's not the case, so the framerate
+  // ends up being closer to between 13 and 15.5 FPS depending on the specs of
+  // the machine.
+  //
+  // There is no distinction between rendered frames and game logic updates -
+  // both always happen at the same rate, since each game logic update is also
+  // causing a new frame to be rendered. The game logic code doesn't even have
+  // any notion of time as such, it just counts frames if it wants to pace
+  // things. The framerate therefore directly influences the speed of the
+  // gameplay, not just the fluidity of the visuals as it usually does in
+  // modern games.
+  //
+  // So while this system does put an upper bound on the game's speed,
+  // preventing it from running way too fast, it still makes the game feel
+  // differently on different hardware. What's interesting is that the
+  // responsibility for adjusting the speed is given to the user. One could
+  // also imagine a system where the game speed is determined automatically
+  // based on doing some kind of benchmark, but that's not what the authors
+  // did. As a consequence, it's actually hard to tell what exactly the game's
+  // intended speed is. It seems likely that the default game speed setting is
+  // what the developers mostly used, but since we don't know what kind of
+  // computers they had, this could still mean slightly different framerates in
+  // practice.
   WaitTicks(12 - gmSpeedIndex);
 
   ReadInput();
