@@ -145,7 +145,7 @@ static NewVocSectionCallback sbNewVocSectionCallback;
 
 // Not clear what these are for. They might also be variables in the basicsnd
 // library, it's not clear from the machine code to which translation unit they
-// belong.
+// belong, since they are unused.
 static word junk1 = 0x118;
 static word junk2 = 0x120;
 
@@ -190,7 +190,7 @@ static int sbLocation = -1;
 static int sbInterrupt = 7;
 
 // Location of the Sound Blaster's DMA completion interrupt vector, derived from
-// the IRQ number. The lookup table below contains all vector location for
+// the IRQ number. The lookup table below contains all vector locations for
 // the different possible IRQ numbers, with -1 marking invalid values.
 // Valid IRQ numbers are 2, 3, 5, 7, and 10.
 static int sbIntVec = 0xf; // Default IRQ is 7
@@ -245,7 +245,7 @@ Part 1: SoundBlaster digital audio playback
 static InterruptHandler SNDLIB_getvect(int num)
 {
   // Retrieve an interrupt vector using a DOS interrupt. This is kinda like a
-  // systemcall.
+  // system call.
   asm mov  ah, 0x35
   asm mov  al, byte ptr [num]
   asm int  0x21
@@ -258,7 +258,7 @@ static InterruptHandler SNDLIB_getvect(int num)
 static void SNDLIB_setvect(int num, InterruptHandler vector)
 {
   // Set an interrupt vector using a DOS interrupt. This is kinda like a
-  // systemcall.
+  // system call.
   asm mov  ah, 0x25
   asm mov  al, byte ptr [num]
   asm push ds
@@ -567,24 +567,35 @@ static dword SubmitSampleChunk(
   // xxxxxx01  | Apply these settings for channel 1
   //
   // [BUG] This should actually be `0x48 | sbDmaChannel` instead of 0x49, which
-  // hardcodes channel 1 regardless of the value of sbDmaChannel. Using a
-  // different DMA channel still works fine in DosBox, but on a real system,
-  // the result is pretty rough: The computer locks up completely as soon as
-  // the game tries to play a digitized sound effect. This bug already exists
-  // in the Wolfenstein 3D version of this code, and I'm surprised that it was
-  // never fixed. DMA channel 1 is the default for SoundBlaster cards, and was
-  // probably the most common choice, but I find it hard to imagine that no one
-  // ever ran into this issue.
-  // Now, the game can still work fine if the DMA controller happens to be
-  // configured acceptably for the channel that's actually in use by the sound
-  // card. In fact, running any other software which uses the SoundBlaster and
-  // handles DMA channels correctly before running Duke Nukem II can make the
-  // game itself also run fine.
-  // And it's also possible that some types of BIOS might configure the DMA
-  // controller differently at boot than on my system that I've tested this
-  // with.  So perhaps there were people who did use a different DMA channel
-  // but were still able to run the game by pure chance.
-  // Still, this seems like a rather nasty oversight.
+  // hardcodes channel 1 regardless of the value of sbDmaChannel. This
+  // oversight prevents the game from using any DMA channel aside from 1, even
+  // though all the rest of the code is correctly set up to handle other DMA
+  // channels.  The same bug also exists in the Wolfenstein 3D codebase. The
+  // technical trouble-shooting documentation that came with the game offers
+  // the following:
+  //
+  // """
+  // Please note that Duke Nukem II must have a DMA of 1 in order to function
+  // properly. If you do have it set for 1, and you determine you have a
+  // conflict, you will need to change the DMA channel of some other piece of
+  // hardware in your system that is also using DMA 1. Please consult your
+  // appropriate manual for information on how to do this.
+  // """
+  //
+  // However, a simple 1-line change to the code would have made the game
+  // perfectly capable of handling other DMA channels as well.  I find it
+  // somewhat baffling that this was never fixed - I'd love to know how this
+  // happened, and why the author of this code, despite clearly being very
+  // competent, wasn't able to spot this problem and fix it. Was this aspect of
+  // Sound Blaster programming poorly documented? Did the author blindly copy
+  // some example code without understanding what it does?
+  //
+  // Anyway - what happens when a different channel is configured? Depending on
+  // what state the DMA controller is in when the game is launched, sound might
+  // still work just fine, or the entire system might lock up completely and
+  // require a hard reboot. This is on real hardware - in my experiments using
+  // DosBox, sound seemed to work fine regardless of which DMA channel was
+  // used.
   outportb(0x0b, 0x49);
 
   // Now give the memory address and length to the DMA controller
@@ -886,9 +897,9 @@ static void PlayNextVocSection(void)
     }
 
     // In VOC files, the section length is encoded as a 24-bit value (3 bytes).
-    // Here we abuse little-endian encoding, by reading a full 32-bit value from
-    // the data, and then throwing away the most significant 8 bits (which are
-    // not actually part of the length value).
+    // Here we take advantage of little-endian encoding, by reading a full
+    // 32-bit value from the data, and then throwing away the most significant
+    // 8 bits (which are not actually part of the length value).
     sectionLength = 0xFFFFFFl & *((dword far*)sbVocData);
     sbVocData += 3;
 
