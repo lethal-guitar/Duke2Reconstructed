@@ -339,7 +339,7 @@ static void DisableSbInterrupts(void)
     // like the idea was to preserve the interrupt's enabled state in case it
     // was already enabled before EnableSbInterrupts() was called, but I'm not
     // quite sure why. If the intention was to restore the system's state from
-    // before setting up the SoundBlaster interrupt handler, than I would
+    // before setting up the SoundBlaster interrupt handler, then I would
     // expect sbOldIntMask to be captured at the time when the interrupt
     // handler is installed, and kept unchanged until restoring the original
     // interrupt handler. But that variable is set in EnableSbInterrupts every
@@ -367,7 +367,7 @@ static void DisableSbInterrupts(void)
 
   // Same thing here as in EnableSbInterrupts - use the secondary PIC if the
   // interrupt number is higher than 7. The logic here is otherwise identical
-  // to the code above. Also see the [BUG] not in EnableSbInterrupts() on this.
+  // to the code above. Also see the [BUG] note in EnableSbInterrupts() on this.
   if (sbInterrupt >= 8)
   {
     interruptMask = inportb(0xA1);
