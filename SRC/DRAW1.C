@@ -148,7 +148,7 @@ void pascal FillScreenRegion(
  * w.r.t. the screen. If not, unrelated video memory will be overwritten, which
  * can cause graphical corruption.
  */
-void pascal DrawMessageBoxFrame(word left, word top, int height, int width)
+int pascal DrawMessageBoxFrame(word left, word top, int height, int width)
 {
   register int x;
   register int y;
@@ -190,8 +190,9 @@ void pascal DrawMessageBoxFrame(word left, word top, int height, int width)
   DrawStatusIcon_1x1(XY_TO_OFFSET(6, 4), left, top + height - 1);
   DrawStatusIcon_1x1(XY_TO_OFFSET(4, 4), left + width - 1, top + height - 1);
 
-  // [NOTE] This has no effect (the compiler even warns about it).
-  // But it still results in assembly being generated, so we have to keep it.
-  // Probably this was just left in by accident.
-  left + 1;
+  // [NOTE] The return value isn't used anywhere, this could've been deleted.
+  // This is most likely a holdover from the Cosmo codebase, which has a
+  // basically identical version of this same function, but does make use of
+  // the return value.
+  return left + 1;
 }
