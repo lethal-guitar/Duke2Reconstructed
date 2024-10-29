@@ -14,7 +14,7 @@ check out [RigelEngine](https://github.com/lethal-guitar/RigelEngine).
 
 ## Background
 
-In order to create RigelEngine, I spent countless hours dissecting the original game's assembly code in Ida Pro.
+In order to create RigelEngine, I spent countless hours dissecting the original game's assembly code in IDA Pro.
 But RigelEngine's code is very different from what the original might have looked like,
 and many of the low-level systems aren't represented at all since they have been replaced with
 modern APIs in RigelEngine.
