@@ -23,7 +23,7 @@ I think it's worthwhile to also preserve the original code as closely as possibl
 since - to me at least - it's really interesting, educational, and fascinating.
 With my reverse-engineering work, I had already done the hardest part of recreating the code,
 it just wasn't in a shape that would be easily accessible/readable to other people:
-The results were captured in handwritten notes, cryptic pseudocode, comments inside my Ida Pro project, and knowledge in my head.
+The results were captured in handwritten notes, cryptic pseudocode, comments inside my IDA Pro project, and knowledge in my head.
 
 So this is where this project comes in: Thoroughly commented C & Assembly code,
 which can actually be compiled into a functional DOS executable using an era-appropriate toolchain.
